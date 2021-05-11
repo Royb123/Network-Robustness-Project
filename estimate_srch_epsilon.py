@@ -220,7 +220,7 @@ for digit_to_analyze in range(1):  # just for zero
 
 
     for img in pca_train_data:
-        reshaped_img = img.reshape(1, IMG_WIDTH * IMG_HIGHT)
+        reshaped_img = img.reshape(1, IMG_WIDTH * IMG_HIGHT)/255.0
         new_img_pca = pca_matrix.transform(reshaped_img)[0]
         pca_img_lst.append(new_img_pca)
     # ##### pca_train_data = [np.array(image).astype(np.float64) for image in pca_data]
@@ -230,7 +230,7 @@ for digit_to_analyze in range(1):  # just for zero
 # use PCA
 eps_lst = create_epsilon_lst()
 closest_images_ep = []
-features = [28,34,65,3,49,53,37,47,44,64]  # fill this
+features = [76,9,8,69,5,13,77,25,19,42]  # fill this
 date = datetime.datetime.now()
 day = str(date.day)
 month =str(date.month)

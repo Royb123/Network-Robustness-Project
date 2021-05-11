@@ -119,10 +119,12 @@ def score_func(pca_image, k, features_lst, pca_images_set,epsilon_lst):
     k_closest_images = []
     ind = 0
     max_sum = 0
+    norm_pca_image=[(float(i)-min(pca_image))/(max(pca_image)-min(pca_image)) for i in pca_image]
     for image in pca_images_set:
         sum_i = 0
+        norm_pca_image_set=[(float(i)-min(image))/(max(image)-min(image)) for i in image]
         for feature in features_lst:
-            sum_i += abs(image[feature]-pca_image[feature])
+            sum_i += abs(norm_pca_image_set[feature]-norm_pca_image[feature])
         if len(k_closest_images) < k:
             k_closest_images.append((ind, sum_i))
             if sum_i>max_sum:
@@ -136,11 +138,11 @@ def score_func(pca_image, k, features_lst, pca_images_set,epsilon_lst):
                 max_sum = new_max[1]
 
         ind += 1
-
     res=[]
     adaptive_res=[]
     for ind in k_closest_images:
         res.append(epsilon_lst[ind[0]])
+    """
     res.sort()
     i=4
     adaptive_res.append(res[i])
@@ -152,7 +154,7 @@ def score_func(pca_image, k, features_lst, pca_images_set,epsilon_lst):
         if res[i+1] - res[i] > 0.0008:
             break
         adaptive_res.append(res[i])
-
+    """
     return res
 
 
@@ -233,7 +235,7 @@ for digit_to_analyze in range(1):  # just for zero
 
 
     for img in pca_train_data:
-        reshaped_img = img.reshape(1, IMG_WIDTH * IMG_HIGHT)
+        reshaped_img = img.reshape(1, IMG_WIDTH * IMG_HIGHT)/255.0
         new_img_pca = pca_matrix.transform(reshaped_img)[0]
         pca_img_lst.append(new_img_pca)
     # ##### pca_train_data = [np.array(image).astype(np.float64) for image in pca_data]
@@ -243,7 +245,7 @@ for digit_to_analyze in range(1):  # just for zero
 # use PCA
 eps_lst = create_epsilon_lst()
 closest_images_ep = []
-features = [28,34,65,3,49,53,37,47,44,64]  # fill this
+features = [76,9,8,69,5,13,77,25,19,42]  # fill this
 date = datetime.datetime.now()
 day = str(date.day)
 month =str(date.month)

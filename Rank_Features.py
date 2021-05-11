@@ -138,8 +138,8 @@ for digit_to_analyze in range(10):
     results_file_name = '/root/results/'+network_name+'/features_rank_'+network_name+'_'+timestamp_str+'.txt'
     new_results_file = open(results_file_name, 'a')
     # change images for different features
-    for pca_feature_to_change in range(int(sys.argv[2],sys.argv[3]):
-        for change_value in range(1,sys.argv[4]):
+    for pca_feature_to_change in range(int(sys.argv[2]),int(sys.argv[3])):
+        for change_value in range(1,int(sys.argv[4])):
             changed_images = []
             for i in range(num_of_images):
                 img_org = pca_train_data[i].reshape(1, img_w * img_h)/255

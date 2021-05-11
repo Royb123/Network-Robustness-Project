@@ -269,7 +269,8 @@ for digit_to_analyze in range(1):  # just for zero
     img_cnt = 0
     for image in epsilon_tst:
 
-        closest_images_ep = epsilon_of_k_closest_image(image, k, estimate_epsilon_data, epsilon_lst)
+        img_for_distance = np.array(image[1:]).astype(np.float64)
+        closest_images_ep = epsilon_of_k_closest_image(img_for_distance, k, estimate_epsilon_data, eps_lst)
         lower = min(closest_images_ep)
         upper = max(closest_images_ep)
         changed_image = image
@@ -281,14 +282,14 @@ for digit_to_analyze in range(1):  # just for zero
 
         # check for epsilon zero
         max_epsilon = -1
-        start = 0.0
-        end = 0.0
+        start = time.time()
         new_result_str = run_in_ERAN(0.0)
+        end = time.time()
 
         if new_result_str == '1':
-            start = float(time.time())
+            start = time.time()
             max_epsilon = binary_search(lower, upper)
-            end = float(time.time())
+            end = time.time()
 
 
         new_results_file.write(

@@ -308,7 +308,7 @@ for digit_to_analyze in range(1):  # just for zero
     eps_lst = create_epsilon_lst()
     clusters_epsilons = []
     images_features_array = create_features_array(pca_img_lst, features)
-    results_file_name = '/root/results/'+network_name+'/estimate_binary_srch_epsilon_'+network_name+'_imgs_'+str(start_indx)+'_to_'+str(int(start_indx)+NUM_OF_IMAGES)+'_'+timestamp_str+'.txt'
+    results_file_name = '/root/results/'+network_name+'/k-mean_srch_epsilon_'+network_name+'_imgs_'+str(start_indx)+'_to_'+str(int(start_indx)+NUM_OF_IMAGES)+'_'+timestamp_str+'.txt'
     new_results_file = open(results_file_name, 'a')
     if len(sys.argv) == 3:
         closest_k = 10

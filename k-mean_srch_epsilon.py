@@ -11,15 +11,15 @@ for each image:
 
 """
 import subprocess
+import numpy as np
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 import csv
 import os
 import keras
 import time
 import sys
 import datetime
-import numpy as np
-
 
 IMG_HIGHT = 28
 IMG_WIDTH = 28
@@ -28,13 +28,10 @@ MAX_PCA_DIM = IMG_HIGHT * IMG_WIDTH * IMG_LAYERS
 NUM_OF_IMAGES = 784
 network_name = sys.argv[1]
 start_indx = int(sys.argv[2])
-
-if len(sys.argv)==3:
-    k = 10 #default k
-else:
-    k = int(sys.argv[3])
-
-
+#start_indx_ep = sys.argv[3]
+cmd_k = sys.argv[3]
+num_of_kmean_runs = sys.argv[4]
+kmean_tolerance = sys.argv[5]
 (train_images, train_labels), (test_images, test_labels) = keras.datasets.mnist.load_data()
 train_images = train_images.reshape(-1, IMG_HIGHT , IMG_WIDTH, IMG_LAYERS) 
 # IMGS_PATH = r"C:\Users\zinki\Desktop\Technion\integrativy\14.12.2020"
@@ -62,9 +59,10 @@ def create_class_array(dataset,indexes,digit_to_analyze): # returns the images i
     b = np.insert(b,0,int(digit_to_analyze))
     if cnt == 0:
         digits = b
+        cnt += 1
     else:
         digits = np.vstack((digits,b))
-    cnt += 1
+
   return digits
 
 
@@ -124,7 +122,7 @@ def run_in_ERAN(epsilon):
     return new_result_str
 
 
-'''def score_func(pca_image, k, features_lst, pca_images_set,epsilon_lst):
+def score_func(pca_image, k, features_lst, pca_images_set,epsilon_lst):
     k_closest_images = []
     ind = 0
     max_sum = 0
@@ -147,36 +145,22 @@ def run_in_ERAN(epsilon):
         ind += 1
 
     res=[]
+    adaptive_res=[]
     for ind in k_closest_images:
         res.append(epsilon_lst[ind[0]])
-    return res'''
+    res.sort()
+    i=4
+    adaptive_res.append(res[i])
+    for i in range(5,8):
+        if res[i] - res[i-1] > 0.0008:
+            break
+        adaptive_res.append(res[i])
+    for i in range(3,1,-1):
+        if res[i+1] - res[i] > 0.0008:
+            break
+        adaptive_res.append(res[i])
 
-def epsilon_of_k_closest_image(image_to_estimate, k, epsilon_estimation_data, epsilon_lst):  #in the image plane
-    k_closest_images = []
-    ind = 0
-    max_sum = 0
-
-    for image in epsilon_estimation_data:
-        distance=  np.linalg.norm(image_to_estimate-image)
-
-        if len(k_closest_images) < k:
-            k_closest_images.append((ind, distance))
-            if distance > max_sum:
-                max_sum = distance
-        else:
-            if distance < max_sum:
-                curr_max_element = max(k_closest_images, key= lambda t: t[1])
-                k_closest_images.remove(curr_max_element)
-                k_closest_images.append((ind, distance))
-                new_max = max(k_closest_images, key=lambda t: t[1])
-                max_sum = new_max[1]
-        ind += 1
-
-    eps_k_closest_image = []
-    for ind in k_closest_images:
-        eps_k_closest_image.append(epsilon_lst[ind[0]])
-
-    return eps_k_closest_image
+    return res
 
 
 def estimate_epsilon(k, k_images_lst, epsilon_lst):
@@ -240,67 +224,136 @@ def binary_search(lower_bound, upper_bound):
     return epsilon,cnt
 
 
+def create_single_img_features_array(image, features_list):
+    feature_cnt = 0
+    single_img_features_array = []
+
+    for feature in features_list:
+        if feature_cnt == 0:
+            single_img_features_array = image[feature]
+            feature_cnt += 1
+        else:
+            single_img_features_array = np.append(single_img_features_array, image[feature])
+
+    return single_img_features_array
+
+
+def create_features_array(images_in_features_plane, features_list):
+    images_features_array = []
+    images_cnt = 0
+    for image in images_in_features_plane:
+        single_img_features = create_single_img_features_array(image, features_list)
+
+        if images_cnt == 0:
+            images_features_array = single_img_features
+            images_cnt += 1
+        else:
+            images_features_array = np.vstack((images_features_array, single_img_features))
+
+    return images_features_array
+
+
+def compute_clusters_epsilons(images_features_array, num_clusters, epsilon_lst, num_of_kmean_runs, kmean_tolerance):
+    clusters_epsilons = []
+    k_means = KMeans(n_cluster= num_clusters, n_init = num_of_kmean_runs, tol = kmean_tolerance,
+                     precompute_distances = True, algorithm = "full").fit(images_features_array)  #note that maximum number of iterations of the k-means algorithm for a single run is 300.
+    clusters_labels = k_means.labels_
+    for cluster in range(num_clusters):   #extract array of images in cluster then extract max and min eps for each cluster
+        cluster_cnt = 0
+        tmp_max_eps = 0
+        tmp_min_eps = np.inf
+        for img_indx in range(len(images_features_array)):
+            if clusters_labels == cluster:
+                tmp_max_eps = max(tmp_max_eps, epsilon_lst[img_indx])
+                tmp_min_eps = min(tmp_min_eps, eps_lst[img_indx])
+        if cluster_cnt == 0:
+            clusters_epsilons = ([tmp_min_eps,tmp_max_eps])
+            cluster_cnt += 1
+        else:
+            clusters_epsilons = np.vstack(clusters_epsilons, ([tmp_min_eps,tmp_max_eps]))
+
+    return clusters_epsilons, k_means #first element is min then max
+
+
+pca_matrix = 0
+epsilon_tst_images = 0
+pca_img_lst = []  # images in features plane
+
+date = datetime.datetime.now()
+day = str(date.day)
+month =str(date.month)
+hour = str(date.hour)
+minute = str(date.minute)
+timestamp_str = month+'_'+day+'_'+hour+'_'+minute
+
+
 for digit_to_analyze in range(1):  # just for zero
+    # new images to binary search according to estimation
+    tst_indexes = get_class_indexes(train_images, train_labels, digit_to_analyze, start_indx)
+    epsilon_tst_images = create_class_array(train_images, tst_indexes, digit_to_analyze)
+    # images with known epsilon, used for estimating the new images epsilon and calculating the pca matrix.
+    images_epsilon_estimate = load_data("pca_mnist_class_digit_" + str(digit_to_analyze) + ".csv")
+    estimate_epsilon_data = [np.array(image[1:]).astype(np.float64) for image in images_epsilon_estimate]
 
-    # test images
-    epsilon_tst_indexes = get_class_indexes(train_images, train_labels, digit_to_analyze, start_indx)
-    epsilon_tst = create_class_array(train_images, epsilon_tst_indexes, digit_to_analyze)
+    pca_matrix = calc_pca(estimate_epsilon_data, MAX_PCA_DIM)
 
-    # images used for estimating epsilon
-    estimate_epsilon_data = load_data("pca_mnist_class_digit_" + str(digit_to_analyze) + ".csv")
-    estimate_epsilon_data = [np.array(image[1:]).astype(np.float64) for image in estimate_epsilon_data]
+    for img in estimate_epsilon_data:
+        reshaped_img = img.reshape(1, IMG_WIDTH * IMG_HIGHT)/255.0
+        img_pca = pca_matrix.transform(reshaped_img)[0]
+        pca_img_lst.append(img_pca)
 
-
+    # using PCA to test binary search
+    features = [28, 34, 65, 3, 49, 53, 37, 47, 44, 64]  # fill this
+    cnt = NUM_OF_IMAGES + 1
     eps_lst = create_epsilon_lst()
-    closest_images_ep = []
-
-    date = datetime.datetime.now()
-    day = str(date.day)
-    month =str(date.month)
-    hour = str(date.hour)
-    minute = str(date.minute)
-    timestamp_str = month+'_'+day+'_'+hour+'_'+minute
-
-    results_file_name = '/root/results/'+network_name+'/image_plane_srch_epsilon_'+network_name+'_imgs_'+str(start_indx)+'_to_'+str(int(start_indx)+NUM_OF_IMAGES)+'_'+timestamp_str+'.txt'
+    clusters_epsilons = []
+    images_features_array = create_features_array(pca_img_lst, features)
+    results_file_name = '/root/results/'+network_name+'/k-mean_srch_epsilon_'+network_name+'_imgs_'+str(start_indx)+'_to_'+str(int(start_indx)+NUM_OF_IMAGES)+'_'+timestamp_str+'.txt'
     new_results_file = open(results_file_name, 'a')
-    new_results_file.write('using k = ' + str(k) + '\n')
+    if len(sys.argv) == 3:
+        closest_k = 10
+    else:
+        closest_k = cmd_k
+    num_of_clusters = round(NUM_OF_IMAGES/closest_k)
+    new_results_file.write('using k = '+str(closest_k)+', num of clusters is '+str(num_of_clusters)+', features list: '+str(features)+', '+str(len(features))+' features \n'
+                           + ', kmean runs '+str(num_of_kmean_runs)+', tolerance '+str(kmean_tolerance))
 
-    cnt= NUM_OF_IMAGES+1
-    img_cnt = 0
-    for image in epsilon_tst:
+    for image in epsilon_tst_images:
+        reshaped_img = image[1:].reshape(1, IMG_WIDTH * IMG_HIGHT)/255.0
+        img_pca = pca_matrix.transform(reshaped_img)[0]
+        img_features_array = create_single_img_features_array(image, features)
+        clusters_epsilons, k_means = compute_clusters_epsilons(images_features_array, num_of_clusters, eps_lst, num_of_kmean_runs, kmean_tolerance)
+        img_cluster = k_means.predict(img_features_array)
+        img_epsilons = clusters_epsilons[img_cluster[0]]
+        lower = img_epsilons[0]
+        upper = img_epsilons[1]
 
-        img_for_distance = np.array(image[1:]).astype(np.float64)
-        closest_images_ep = epsilon_of_k_closest_image(img_for_distance, k, estimate_epsilon_data, eps_lst)
-        lower = min(closest_images_ep)
-        upper = max(closest_images_ep)
         changed_image = image
         changed_image = changed_image.astype(int)
 
-        # save image to data fo ERAN to run
+        # clear file
         open('../data/mnist_test.csv', 'w').close()
-        save_single_img_csv('../data/mnist_test.csv', changed_image)
 
+        save_single_img_csv('../data/mnist_test.csv', changed_image)
         # check for epsilon zero
         max_epsilon = -1
         start = time.time()
         new_result_str = run_in_ERAN(0.0)
         end = time.time()
-
         if new_result_str == '1':
             start = time.time()
             max_epsilon = binary_search(lower, upper)
             end = time.time()
-
-
         new_results_file.write(
             "img " + str(cnt) + " Network: " + network_name + " test of digit " + str(digit_to_analyze) +
-                    ", max epsilon ")
-        new_results_file.write(str(max_epsilon) +' time:  '+str(end-start)+' lower bound: '+str(lower)+' upper bound: '+str(upper)+' \n')
+            ", max epsilon ")
+        new_results_file.write(str(max_epsilon) + ' time:  ' + str(end-start) + ' lower bound: ' + str(lower) +
+                               ' upper bound: ' + str(upper) + ' size of cluster: ' + str(closest_k) + ' \n')
 
         # delete file
         open('../data/mnist_test.csv', 'w').close()
-        cnt+=1
-        img_cnt+=1
+        cnt += 1
+
 
     new_results_file.close()
 

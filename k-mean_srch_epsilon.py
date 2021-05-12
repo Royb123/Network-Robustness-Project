@@ -315,7 +315,8 @@ for digit_to_analyze in range(1):  # just for zero
     else:
         closest_k = cmd_k
     num_of_clusters = round(NUM_OF_IMAGES/closest_k)
-    new_results_file.write('using k = '+str(closest_k)+', features list: '+str(features)+', '+str(len(features))+' features \n')
+    new_results_file.write('using k = '+str(closest_k)+', num of clusters is '+str(num_of_clusters)+', features list: '+str(features)+', '+str(len(features))+' features \n'
+                           + ', kmean runs '+str(num_of_kmean_runs)+', tolerance '+str(kmean_tolerance))
 
     for image in epsilon_tst_images:
         reshaped_img = image[1:].reshape(1, IMG_WIDTH * IMG_HIGHT)/255.0

@@ -119,12 +119,15 @@ def score_func(pca_image, k, features_lst, pca_images_set,epsilon_lst):
     k_closest_images = []
     ind = 0
     max_sum = 0
-    norm_pca_image=[(float(i)-min(pca_image))/(max(pca_image)-min(pca_image)) for i in pca_image]
+    #norm_pca_image=[(float(i)-min(pca_image))/(max(pca_image)-min(pca_image)) for i in pca_image]
     for image in pca_images_set:
+        if epsilon_lst[ind]==-1.0:
+            ind+=1
+            continue
         sum_i = 0
-        norm_pca_image_set=[(float(i)-min(image))/(max(image)-min(image)) for i in image]
+        #norm_pca_image_set=[(float(i)-min(image))/(max(image)-min(image)) for i in image]
         for feature in features_lst:
-            sum_i += abs(norm_pca_image_set[feature]-norm_pca_image[feature])
+            sum_i += abs(pca_image[feature]-image[feature])
         if len(k_closest_images) < k:
             k_closest_images.append((ind, sum_i))
             if sum_i>max_sum:
@@ -141,7 +144,10 @@ def score_func(pca_image, k, features_lst, pca_images_set,epsilon_lst):
     res=[]
     adaptive_res=[]
     for ind in k_closest_images:
+        print(ind[0])
         res.append(epsilon_lst[ind[0]])
+    print(res)
+    print("##########################3")
     """
     res.sort()
     i=4
@@ -155,6 +161,7 @@ def score_func(pca_image, k, features_lst, pca_images_set,epsilon_lst):
             break
         adaptive_res.append(res[i])
     """
+    print("ressssss "+str(res))
     return res
 
 
@@ -179,7 +186,8 @@ def create_epsilon_lst():
         new_limit = new_limit[:6]
         new_ep = float(new_limit)
         epsilons.append(new_ep)
-
+    
+    print(epsilons)
     return epsilons
 
 
@@ -188,7 +196,7 @@ def binary_search(lower_bound, upper_bound):
     new_result_str = run_in_ERAN(mid)
     epsilon = 0
     last_epsilon = -1
-    mid = (lower_bound+upper_bound)/2
+    #mid = (lower_bound+upper_bound)/2
     min_ep = lower_bound
     max_ep = upper_bound
     cnt = 0
@@ -202,10 +210,17 @@ def binary_search(lower_bound, upper_bound):
         epsilon = -2
         return epsilon,cnt
 
-    while "{:.4f}".format(last_epsilon) != "{:.4f}".format(epsilon):
+    while min_ep != max_ep:
+        if round(max_ep-min_ep,4)==0.0001:
+            new_result_str = run_in_ERAN(max_ep)
+            cnt+=1
+            if new_result_str == '1':
+                return max_ep,cnt
+            else:
+                return min_ep,cnt
         if new_result_str == '0':
             max_ep = mid
-            mid = (max_ep+min_ep)/2
+            mid = round((max_ep+min_ep)/2,4)
             new_result_str = run_in_ERAN(mid)
             cnt += 1
         else:
@@ -213,10 +228,10 @@ def binary_search(lower_bound, upper_bound):
             epsilon = mid
             cnt += 1
             min_ep = mid
-            mid = (min_ep+max_ep)/2
+            mid = round((min_ep+max_ep)/2,4)
             new_result_str = run_in_ERAN(mid)
 
-    return epsilon,cnt
+    return min_ep,cnt
 
 
 pca_matrix = 0
@@ -281,7 +296,9 @@ for image in images_in_class:
     save_single_img_csv('../data/mnist_test.csv', changed_image)
     # check for epsilon zero
     max_epsilon = -1
+    start = time.time()
     new_result_str = run_in_ERAN(0.0)
+    end = time.time()
     if new_result_str == '1':
         start = time.time()
         max_epsilon = binary_search(lower,upper)

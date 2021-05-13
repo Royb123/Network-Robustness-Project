@@ -25,7 +25,7 @@ average_time_old = 0
 
 for line in f:
     line_str = line.split(' ')
-    if line_str[0] == "using":
+    if line_str[0] == "using" or line_str[0]!="img":
         continue
     lines_new += 1
     epsilon = line_str[10]

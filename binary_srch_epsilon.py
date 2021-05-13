@@ -100,52 +100,35 @@ def run_in_ERAN(epsilon):
     print('\n\n\n\n\n\n\n\n\n'+ str(new_result_str)+'\n\n\n\n\n')
     return new_result_str
 
-'''
-def binary_search():
-    new_result_str = run_in_ERAN(0.5)
-    epsilon = 0
-    mid = 0.5
-    min_ep = 0.0
-    max_ep = 1.0
-    cnt =0
-    while cnt<=10:
-        if new_result_str=='0':
-            max_ep= mid
-            mid= (max_ep+min_ep)/2.0
-            new_result_str = run_in_ERAN(mid)
-            cnt+=1
-        else:
-            cnt+=1
-            min_ep = mid
-            mid = (min_ep+max_ep)/2.0
-            new_result_str = run_in_ERAN(mid)
 
-    return mid
-'''
 def binary_search(lower_bound, upper_bound):
     mid = (lower_bound+upper_bound)/2
     new_result_str = run_in_ERAN(mid)
-    epsilon = 0
-    last_epsilon = -1
     mid = (lower_bound+upper_bound)/2
     min_ep = lower_bound
     max_ep = upper_bound
     cnt = 0
-    while "{:.4f}".format(last_epsilon) != "{:.4f}".format(epsilon):
+    while min_ep != max_ep:
+        if round(max_ep-min_ep,4)==0.0001:
+            new_result_str = run_in_ERAN(max_ep)
+            cnt+=1
+            if new_result_str == '1':
+                return max_ep,cnt
+            else:
+                return min_ep,cnt
         if new_result_str == '0':
             max_ep = mid
-            mid = (max_ep+min_ep)/2
+            mid = round((max_ep+min_ep)/2,4)
             new_result_str = run_in_ERAN(mid)
             cnt += 1
         else:
-            last_epsilon = epsilon
-            epsilon = mid
             cnt += 1
             min_ep = mid
-            mid = (min_ep+max_ep)/2
+            mid = round((min_ep+max_ep)/2,4)
             new_result_str = run_in_ERAN(mid)
 
-    return epsilon,cnt
+    return min_ep,cnt
+
 
 def main():
     # put MNIST images into list

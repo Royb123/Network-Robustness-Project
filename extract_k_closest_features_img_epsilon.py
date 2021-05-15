@@ -24,9 +24,8 @@ IMG_WIDTH = 28
 IMG_LAYERS = 1
 MAX_PCA_DIM = IMG_HIGHT * IMG_WIDTH * IMG_LAYERS
 NUM_OF_IMAGES = 784
-network_name = sys.argv[1]
-start_indx = int(sys.argv[2])
-cmd_k = int(sys.argv[3])
+start_indx = int(sys.argv[1])
+cmd_k = int(sys.argv[2])
 (train_images, train_labels), (test_images, test_labels) = keras.datasets.mnist.load_data()
 train_images = train_images.reshape(-1, IMG_HIGHT , IMG_WIDTH, IMG_LAYERS) 
 # IMGS_PATH = r"C:\Users\zinki\Desktop\Technion\integrativy\14.12.2020"
@@ -250,10 +249,10 @@ for digit_to_analyze in range(1):  # just for zero
     minute = str(date.minute)
     timestamp_str = month+'_'+day+'_'+hour+'_'+minute
 
-    if len(sys.argv) <= 3:
-        closest_k = cmd_k  # default k
+    if len(sys.argv) == 2:
+        closest_k = cmd_k
     else:
-        closest_k = 10
+        closest_k = 10 # default k
 
     results_file_name = '/root/results/'+str(closest_k)+'_closest_img_epsilon_imgs_'+str(start_indx)+'_to_'+str(int(start_indx)+NUM_OF_IMAGES)+'_'+timestamp_str+'.txt'
     new_results_file = open(results_file_name, 'a')

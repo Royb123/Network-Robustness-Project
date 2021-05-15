@@ -207,37 +207,30 @@ def create_epsilon_lst():
 def binary_search(lower_bound, upper_bound):
     mid = (lower_bound+upper_bound)/2
     new_result_str = run_in_ERAN(mid)
-    epsilon = 0
-    last_epsilon = -1
     mid = (lower_bound+upper_bound)/2
     min_ep = lower_bound
     max_ep = upper_bound
     cnt = 0
-    initial_check = run_in_ERAN(min_ep)
-    if initial_check == '0':
-        epsilon = -3
-        return epsilon,cnt
-    
-    initial_check = run_in_ERAN(max_ep+0.0001)
-    if initial_check == '1':
-        epsilon = -2
-        return epsilon,cnt
-
-    while "{:.4f}".format(last_epsilon) != "{:.4f}".format(epsilon):
+    while min_ep != max_ep:
+        if round(max_ep-min_ep,4)==0.0001:
+            new_result_str = run_in_ERAN(max_ep)
+            cnt+=1
+            if new_result_str == '1':
+                return max_ep,cnt
+            else:
+                return min_ep,cnt
         if new_result_str == '0':
             max_ep = mid
-            mid = (max_ep+min_ep)/2
+            mid = round((max_ep+min_ep)/2,4)
             new_result_str = run_in_ERAN(mid)
             cnt += 1
         else:
-            last_epsilon = epsilon
-            epsilon = mid
             cnt += 1
             min_ep = mid
-            mid = (min_ep+max_ep)/2
+            mid = round((min_ep+max_ep)/2,4)
             new_result_str = run_in_ERAN(mid)
 
-    return epsilon,cnt
+    return min_ep,cnt
 
 
 for digit_to_analyze in range(1):  # just for zero

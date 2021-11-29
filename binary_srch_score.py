@@ -3,6 +3,7 @@ import keras
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+from operator import itemgetter
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -105,8 +106,8 @@ def binary_search(lower_bound, upper_bound, is_in_range, floating_point=4):
     return mid, cnt
 
 
-def ERAN_demmy_func(mid):
-    if mid <= 0.0004:
+def ERAN_demmy_func(mid, i):
+    if mid <= 0.0004+i*0.0001:
         return 1
     else:
         return 0
@@ -117,50 +118,67 @@ def score_func(dataset, epsilon=0):
     pass
 
 
-def choose_image(range_list):
-    image_index = random.choice(len(range_list))
+def choose_index(range_list):
+    image_index = random.choice(range(len(range_list)))
     return image_index
 
 
-def restart_images_range(dataset, num_of_images, lower_bound, upper_bound):
+def restart_images_range(dataset, lower_bound, upper_bound):
     """
             input is a list of images, it returns 2D list containing
             initialized range
     """
     range_list = []
-    for i in num_of_images:
-        range_list.append([dataset[i], lower_bound, upper_bound])
+    for i in range(len(dataset)):
+        range_list.append([i, dataset[i], lower_bound, upper_bound])
     return range_list
 
 
-def find_all_epsilons(range_list, is_in_range, floating_point=4):
+def find_all_epsilons(images_bounderies, is_in_range, floating_point=4):
 
     epsilon_list = []
-    while range_list:
-        i = choose_image(range_list)
-        upper_bound = range_list[i][1]
-        lower_bound = range_list[i][2]
+    while images_bounderies:
+        i = choose_index(images_bounderies)
+        upper_bound = images_bounderies[i][2]
+        lower_bound = images_bounderies[i][3]
         mid_epsilon = (upper_bound+lower_bound)/2
-        is_robust = is_in_range(mid_epsilon)
+        # mid_epsilon = (images_bounderies[i]["upper_bound"] + images_bounderies[i]["lower_bound"]) / 2
+        is_robust = is_in_range(mid_epsilon, images_bounderies[i][0])
         if is_robust == 1:
-            for j in range(i, len(range_list)):
-                range_list[j][1] = mid_epsilon
+            for j in range(i, len(images_bounderies)):
+                images_bounderies[j][2] = mid_epsilon
         else:
             for k in range(0, i+1):
-                range_list[k][2] = mid_epsilon
+                images_bounderies[k][3] = mid_epsilon
 
-        if ("{:.%sf}" % floating_point).format(range_list[i][1])\
-                == ("{:.%sf}" % floating_point).format(range_list[i][2]):
-            range_list.remove(range_list[i])
-            epsilon_list.append([i, epsilon])
+        if ("{:.%sf}" % floating_point).format(images_bounderies[i][2])\
+                == ("{:.%sf}" % floating_point).format(images_bounderies[i][3]):
+            epsilon = ("{:.%sf}" % floating_point).format(images_bounderies[i][2])
+            image_index = images_bounderies[i][0]
+            images_bounderies.pop(i)
+            epsilon_list.append([image_index, epsilon])
 
     return epsilon_list
 
+def is_in_range_using_ERAN_by_CMD():
+    pass
+
+
+def is_in_range_using_ERAN_by_import():
+    pass
 
 if __name__ == "__main__":
-    epsilon, num_of_runs = binary_search(-132, 9879595, ERAN_demmy_func)
-    print('epsilon is '+str(epsilon)+' num of runs is '+str(num_of_runs))
-    images = load_dataset('cifar')
-    plot(images.organized_images['horses'][1236], '3', 'cifar')
-    datasets = [] # TODO
-    datasets = sorted(datasets, key=score_func(datasets))
+    # epsilon, num_of_runs = binary_search(-132, 9879595, ERAN_demmy_func)
+    # print('epsilon is '+str(epsilon)+' num of runs is '+str(num_of_runs))
+
+    images = load_dataset('mnist')
+
+    # plot(images.organized_images['horses'][1236], '3', 'cifar')
+    # datasets = [] # TODO
+    # datasets = sorted(datasets, key=score_func(datasets))
+
+    # TODO change restart_images_range use with class
+    NUM_OF_IMAGES = 10
+    images_bounderies_list = restart_images_range(images.organized_images['0'][:NUM_OF_IMAGES], 0, 0.6)
+    eps = find_all_epsilons(images_bounderies_list, is_in_range=ERAN_demmy_func)
+    print(sorted(eps,key=itemgetter(0)))

@@ -3,10 +3,17 @@ import keras
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import csv
+import subprocess
+import heapq
 from operator import itemgetter
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+
+NETWORK_NAME = 'mnist_relu_3_100.tf'
+LABEL = '0'
+NUM_OF_IMAGES = 10
 
 
 dataset_labels_setup = {
@@ -134,38 +141,75 @@ def restart_images_range(dataset, lower_bound, upper_bound):
     return range_list
 
 
-def find_all_epsilons(images_bounderies, is_in_range, floating_point=4):
+def find_all_epsilons(images_boundaries, is_in_range, floating_point=4):
 
     epsilon_list = []
-    while images_bounderies:
-        i = choose_index(images_bounderies)
-        upper_bound = images_bounderies[i][2]
-        lower_bound = images_bounderies[i][3]
+    while images_boundaries:
+        i = choose_index(images_boundaries)
+        upper_bound = images_boundaries[i][2]
+        lower_bound = images_boundaries[i][3]
         mid_epsilon = (upper_bound+lower_bound)/2
-        # mid_epsilon = (images_bounderies[i]["upper_bound"] + images_bounderies[i]["lower_bound"]) / 2
-        is_robust = is_in_range(mid_epsilon, images_bounderies[i][0])
+        # mid_epsilon = (images_boundaries[i]["upper_bound"] + images_boundaries[i]["lower_bound"]) / 2
+        is_robust = is_in_range(mid_epsilon, images_boundaries[i][0])
         if is_robust == 1:
-            for j in range(i, len(images_bounderies)):
-                images_bounderies[j][2] = mid_epsilon
+            for j in range(i, len(images_boundaries)):
+                images_boundaries[j][2] = mid_epsilon
         else:
             for k in range(0, i+1):
-                images_bounderies[k][3] = mid_epsilon
+                images_boundaries[k][3] = mid_epsilon
 
-        if ("{:.%sf}" % floating_point).format(images_bounderies[i][2])\
-                == ("{:.%sf}" % floating_point).format(images_bounderies[i][3]):
-            epsilon = ("{:.%sf}" % floating_point).format(images_bounderies[i][2])
-            image_index = images_bounderies[i][0]
-            images_bounderies.pop(i)
+        if ("{:.%sf}" % floating_point).format(images_boundaries[i][2])\
+                == ("{:.%sf}" % floating_point).format(images_boundaries[i][3]):
+            epsilon = ("{:.%sf}" % floating_point).format(images_boundaries[i][2])
+            image_index = images_boundaries[i][0]
+            images_boundaries.pop(i)
             epsilon_list.append([image_index, epsilon])
 
     return epsilon_list
 
-def is_in_range_using_ERAN_by_CMD():
-    pass
+
+def save_single_img_csv(new_file_name, data_to_save):
+    with open(new_file_name, 'w+', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(data_to_save)
 
 
-def is_in_range_using_ERAN_by_import():
+def run_eran_in_cmd(epsilon, image):
+    """
+        this runs ERAN using the cmd. in order to do so, need to open a new folder for this specific run,
+        the function saves specific image with label at the start, in the folder data, name mnist.test.csv, from which eran then takes
+         the image.
+        """
+    image_with_label = np.insert(image, 0, LABEL)
+    open('../data/mnist_test.csv', 'w').close()
+    save_single_img_csv('../data/mnist_test.csv', image_with_label)
+
+    output = subprocess.check_output(
+        ['python3', '.', '--netname', '/root/models/' + NETWORK_NAME,
+         '--epsilon', str(epsilon), '--domain', 'deepzono', '--dataset', 'mnist'])
+
+    output_str = str(output)
+    return output_str
+
+
+def is_in_range_using_eran_by_cmd(epsilon, image):
+    output_str = run_eran_in_cmd(epsilon, image)
+    new_result = re.findall('analysis precision  ([0,1])', output_str)
+    return new_result[0]
+
+
+# TODO run eran only once
+def labels_confidence_using_eran_by_cmd(epsilon, image):
+    output_str = run_eran_in_cmd(epsilon, image)
+    labels_confidence_str = re.findall('nub  \[(.*?)\]', output_str)
+    confidence_array = np.array(labels_confidence_str[0].split(',')).astype(float)
+
+    return confidence_array
+
+
+def is_in_range_using_eran_by_import():
     pass
+
 
 if __name__ == "__main__":
     # epsilon, num_of_runs = binary_search(-132, 9879595, ERAN_demmy_func)
@@ -178,7 +222,6 @@ if __name__ == "__main__":
     # datasets = sorted(datasets, key=score_func(datasets))
 
     # TODO change restart_images_range use with class
-    NUM_OF_IMAGES = 10
-    images_bounderies_list = restart_images_range(images.organized_images['0'][:NUM_OF_IMAGES], 0, 0.6)
-    eps = find_all_epsilons(images_bounderies_list, is_in_range=ERAN_demmy_func)
-    print(sorted(eps,key=itemgetter(0)))
+    images_boundaries_list = restart_images_range(images.organized_images[LABEL][:NUM_OF_IMAGES], 0, 0.6)
+    eps = find_all_epsilons(images_boundaries_list, is_in_range=ERAN_demmy_func)
+    print(sorted(eps, key=itemgetter(0)))

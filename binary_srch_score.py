@@ -7,6 +7,7 @@ import csv
 import subprocess
 import heapq
 from operator import itemgetter
+import re
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -113,7 +114,7 @@ def binary_search(lower_bound, upper_bound, is_in_range, floating_point=4):
     return mid, cnt
 
 
-def ERAN_demmy_func(mid, i):
+def eran_demmy_func(mid, i):
     if mid <= 0.0004+i*0.0001:
         return 1
     else:
@@ -121,8 +122,13 @@ def ERAN_demmy_func(mid, i):
 
 
 def score_func(dataset, epsilon=0):
-    # TODO
-    pass
+    labels_confidence = labels_confidence_using_eran_by_cmd(dataset, epsilon)
+    two_highest_conf_lbl = heapq.nlargest(2, labels_confidence)
+    return abs(two_highest_conf_lbl[0] - two_highest_conf_lbl[1])
+
+
+def test_score_func(i, score_array):
+    return score_array[i]
 
 
 def choose_index(range_list):
@@ -143,8 +149,10 @@ def restart_images_range(dataset, lower_bound, upper_bound):
 
 def find_all_epsilons(images_boundaries, is_in_range, floating_point=4):
 
+    cnt = 0
     epsilon_list = []
     while images_boundaries:
+        cnt = cnt + 1
         i = choose_index(images_boundaries)
         upper_bound = images_boundaries[i][2]
         lower_bound = images_boundaries[i][3]
@@ -165,7 +173,14 @@ def find_all_epsilons(images_boundaries, is_in_range, floating_point=4):
             images_boundaries.pop(i)
             epsilon_list.append([image_index, epsilon])
 
-    return epsilon_list
+    return epsilon_list, cnt
+
+
+def load_data(file_name):
+    with open(file_name, newline='') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+    return data
 
 
 def save_single_img_csv(new_file_name, data_to_save):
@@ -222,6 +237,6 @@ if __name__ == "__main__":
     # datasets = sorted(datasets, key=score_func(datasets))
 
     # TODO change restart_images_range use with class
-    images_boundaries_list = restart_images_range(images.organized_images[LABEL][:NUM_OF_IMAGES], 0, 0.6)
-    eps = find_all_epsilons(images_boundaries_list, is_in_range=ERAN_demmy_func)
+    images_boundaries_list = restart_images_range(images.organized_images[LABEL][:NUM_OF_IMAGES], 0, 0.1)
+    eps, num_of_iter = find_all_epsilons(images_boundaries_list, is_in_range=eran_demmy_func)
     print(sorted(eps, key=itemgetter(0)))

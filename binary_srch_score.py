@@ -127,8 +127,9 @@ def score_func(dataset, epsilon=0):
     return abs(two_highest_conf_lbl[0] - two_highest_conf_lbl[1])
 
 
-def test_score_func(i, score_array):
-    return score_array[i]
+def test_score_func(a):
+    cheat_sheet = load_cheat_eps_from_txt('binary_srch_epsilon_accurate_mnist_relu_3_100.txt')
+    return cheat_sheet[a[0]]
 
 
 def choose_index(range_list):
@@ -158,8 +159,8 @@ def find_all_epsilons(images_boundaries, is_in_range, floating_point=4):
         lower_bound = images_boundaries[i][3]
         mid_epsilon = (upper_bound+lower_bound)/2
         # mid_epsilon = (images_boundaries[i]["upper_bound"] + images_boundaries[i]["lower_bound"]) / 2
-        is_robust = is_in_range(mid_epsilon, images_boundaries[i][0])
-        if is_robust == 1:
+        is_robust = is_in_range(mid_epsilon, images_boundaries[i][1])
+        if is_robust == '1':
             for j in range(i, len(images_boundaries)):
                 images_boundaries[j][2] = mid_epsilon
         else:
@@ -176,11 +177,22 @@ def find_all_epsilons(images_boundaries, is_in_range, floating_point=4):
     return epsilon_list, cnt
 
 
-def load_data(file_name):
+def load_data_from_csv(file_name):
     with open(file_name, newline='') as f:
         reader = csv.reader(f)
         data = list(reader)
     return data
+
+
+def load_cheat_eps_from_txt(file_name):
+    eps_file = open(file_name)
+    eps_array = []
+    for position, line in enumerate(eps_file):
+        new_eps = float(re.findall('max epsilon (.*?) ,', line)[0])
+        eps_array.append(new_eps)
+        if position == NUM_OF_IMAGES-1:
+            break
+    return eps_array
 
 
 def save_single_img_csv(new_file_name, data_to_save):
@@ -237,6 +249,9 @@ if __name__ == "__main__":
     # datasets = sorted(datasets, key=score_func(datasets))
 
     # TODO change restart_images_range use with class
-    images_boundaries_list = restart_images_range(images.organized_images[LABEL][:NUM_OF_IMAGES], 0, 0.1)
-    eps, num_of_iter = find_all_epsilons(images_boundaries_list, is_in_range=eran_demmy_func)
+
+    images_boundaries = restart_images_range(images.organized_images[LABEL][:NUM_OF_IMAGES], 0, 0.1)
+    images_bounds_sorted = sorted(images_boundaries, key=test_score_func)
+    eps, num_of_iter = find_all_epsilons(images_bounds_sorted, is_in_range=is_in_range_using_eran_by_cmd)
     print(sorted(eps, key=itemgetter(0)))
+    print("done hurray")

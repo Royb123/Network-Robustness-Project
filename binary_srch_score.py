@@ -71,6 +71,11 @@ def plot(image, label, name):  # input- image (without label). no output. plots 
     plt.show()
 
 
+def ready_image_for_eran(image, label):
+    image_with_label = np.insert(image, 0, label)
+    return image_with_label
+
+
 def load_dataset(dataset_name, debug=False):
 
     name = dataset_name.lower().strip()

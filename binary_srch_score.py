@@ -39,6 +39,7 @@ class Dataset(object):
         self.test_labels = test_labels
         self.labels = []
         self.organized_images = {}
+        self.dict_to_eran = {}
         self.set_up_labels()
 
     def set_up_labels(self):
@@ -59,6 +60,18 @@ class Dataset(object):
             else:
                 organized_images[key] = np.append(organized_images[key], [self.test_images[i]], axis=0)
         self.organized_images = organized_images
+
+    def create_dict_to_eran(self):
+        """
+        input is organized dictionary, output is the image in a single array,
+         with the label as the first object in array
+        """
+        dict_to_eran = dict.fromkeys(self.labels)
+        for label in self.labels:
+            dict_to_eran[label] = [np.insert(self.organized_images[label][0], 0, label)]
+            for k in range(1, len(self.organized_images[label])):
+                dict_to_eran[label].append(np.insert(self.organized_images[label][k], 0, label))
+        self.dict_to_eran = dict_to_eran
 
 
 def plot(image, label, name):  # input- image (without label). no output. plots image
@@ -248,6 +261,7 @@ if __name__ == "__main__":
     # print('epsilon is '+str(epsilon)+' num of runs is '+str(num_of_runs))
 
     images = load_dataset('mnist')
+    images.create_dict_to_eran()
 
     # plot(images.organized_images['horses'][1236], '3', 'cifar')
     # datasets = [] # TODO

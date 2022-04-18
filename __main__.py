@@ -51,277 +51,9 @@ import subprocess
 import heapq
 from operator import itemgetter
 import re
-#from geometric_constraints import *
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-dataset_labels_setup = {
-        'mnist': ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
-        'cifar': ('airplanes', 'cars', 'birds', 'cats', 'deer', 'dogs', 'frogs', 'horses', 'ships', 'trucks')
-    }
-
-dataset_test_labels_setup_func = {
-        'mnist': lambda tl, i: tl[i],
-        'cifar': lambda tl, i: tl[i][0]
-    }
 
 
-class Dataset(object):
-    def __init__(self, name, width, height, train_images, train_labels, test_images, test_labels):
-        self.name = name
-        self.width = width
-        self.height = height
-        self.train_images = train_images
-        self.train_labels = train_labels
-        self.test_images = test_images
-        self.test_labels = test_labels
-        self.labels = []
-        self.organized_images = {}
-        self.dict_to_eran = {}
-        self.create_dict_to_eran()
-        self.set_up_labels()
-
-    def set_up_labels(self):
-        if self.name in dataset_labels_setup:
-            self.labels = dataset_labels_setup[self.name]
-        else:
-            raise Exception('only {} are supported'.format(dataset_labels_setup.keys()))
-
-    def organize_to_labels(self):
-        """
-        input is from class dataset, output is a dictionary, keys are according to labels
-        """
-        organized_images = dict.fromkeys(self.labels)
-        for i in range(len(self.test_labels)):
-            key = self.labels[dataset_test_labels_setup_func[self.name](self.test_labels,i)]
-            if organized_images[key] is None:
-                organized_images[key] = [self.test_images[i]]
-            else:
-                organized_images[key] = np.append(organized_images[key], [self.test_images[i]], axis=0)
-        self.organized_images = organized_images
-
-    def create_dict_to_eran(self):
-        """
-        input is organized dictionary, output is the image in a single array,
-         with the label as the first object in array
-        """
-        dict_to_eran = dict.fromkeys(self.labels)
-        for label in self.labels:
-            dict_to_eran[label] = [np.insert(self.organized_images[label][0], 0, label)]
-            for k in range(1, len(self.organized_images[label])):
-                dict_to_eran[label].append(np.insert(self.organized_images[label][k], 0, label))
-        self.dict_to_eran = dict_to_eran
-
-
-def plot(image, label, name):  # input- image (without label). no output. plots image
-
-    print(label)
-    cmap_type = 'viridis'
-    if name == 'mnist':
-        cmap_type = 'gray'
-    plt.imshow(image, cmap=cmap_type)
-    plt.show()
-
-
-def ready_image_for_eran(image, label):
-    image_with_label = np.insert(image, 0, label)
-    return image_with_label
-
-
-def load_dataset(dataset_name, debug=False):
-
-    name = dataset_name.lower().strip()
-
-    if name == 'mnist':
-        (train_images, train_labels), (test_images, test_labels) = keras.datasets.mnist.load_data()
-        img_width = img_height = 28
-    elif name == "cifar":
-        (train_images, train_labels), (test_images, test_labels) = keras.datasets.cifar10.load_data()
-        img_width = img_height = 32
-    else:
-        raise Exception('only mnist and cifar are supported')
-
-    images_dataset = Dataset(name, img_width, img_height, train_images, train_labels, test_images, test_labels)
-    images_dataset.organize_to_labels()
-
-    if debug:
-        plot(images_dataset.test_images[2], images_dataset.test_labels[2], images_dataset.name)
-
-    return images_dataset
-
-
-def binary_search(img, lower_bound, upper_bound, is_in_range):
-
-    if is_in_range(img, lower_bound)[2] == 0:
-        print("epsilon is out of range, too small")
-        return -1, 0
-    if is_in_range(img, upper_bound)[2] == 1:
-        print('epsilon is out of range, too high')
-        return -2, 0
-
-    cnt = 0
-
-    point = 10**(-PRECISION)
-    while (upper_bound - lower_bound) > point:
-        mid = round(((lower_bound + upper_bound)/2), PRECISION+1)
-        if is_in_range(img, mid)[2] == 1:  # if epsilon >= mid
-            lower_bound = mid
-        else:
-            upper_bound = mid
-        cnt += 1
-    return round(lower_bound, PRECISION), cnt
-
-
-def eran_dummy_func(mid, i):
-    if mid <= 0.0004+i*0.0001:
-        return 1
-    else:
-        return 0
-
-
-def score_func(dataset, epsilon=0):
-    labels_confidence = main_run_eran([dataset[1]], epsilon)[0][0]
-    two_highest_conf_lbl = heapq.nlargest(2, labels_confidence)
-    return abs(two_highest_conf_lbl[0] - two_highest_conf_lbl[1])
-
-
-def test_score_func(a, cheat_sheet):
-    b= cheat_sheet[a[0]]
-    return cheat_sheet[a[0]]
-
-
-def choose_index(range_list):
-    #image_index = random.choice(range(len(range_list)))
-    image_index = max(0, (round(len(range_list)/2)-1))
-    return image_index
-
-
-def restart_images_range(dataset, lower_bound, upper_bound):
-    """
-            input is a list of images, it returns 2D list containing
-            initialized range
-    """
-    range_list = []
-    for i in range(len(dataset)):
-        range_list.append([i, dataset[i], lower_bound, upper_bound])
-    return range_list
-
-
-def find_all_epsilons(images_boundaries, is_in_range, floating_point=2):
-
-    cnt = 0
-    epsilon_list = []
-    while images_boundaries:
-        cnt = cnt + 1
-        i = choose_index(images_boundaries)
-        upper_bound = images_boundaries[i][3]
-        lower_bound = images_boundaries[i][2]
-        mid_epsilon = round(((upper_bound+lower_bound)/2), PRECISION+1)
-        # mid_epsilon = (images_boundaries[i]["upper_bound"] + images_boundaries[i]["lower_bound"]) / 2
-        is_robust = is_in_range([images_boundaries[i][1]], mid_epsilon)[2]
-        if is_robust == 1:
-            for j in range(i, len(images_boundaries)):
-                images_boundaries[j][2] = mid_epsilon
-        else:
-            for k in range(0, i+1):
-                images_boundaries[k][3] = mid_epsilon
-
-        if images_boundaries[i][3]-images_boundaries[i][2] <= (10**(-PRECISION)):
-            epsilon = round(images_boundaries[i][2], PRECISION)
-            image_index = images_boundaries[i][0]
-            images_boundaries.pop(i)
-            epsilon_list.append([image_index, epsilon])
-
-    return epsilon_list, cnt
-
-
-def load_data_from_csv(file_name):
-    with open(file_name, newline='') as f:
-        reader = csv.reader(f)
-        data = list(reader)
-    return data
-
-
-def load_cheat_eps_from_txt(file_name):
-    eps_file = open(file_name)
-    eps_array = []
-    for position, line in enumerate(eps_file):
-        new_eps = float(re.findall('max epsilon (.*?) ,', line)[0])
-        eps_array.append(new_eps)
-        if position == NUM_OF_IMAGES-1:
-            break
-    return eps_array
-
-
-def load_cheat_eps_from_csv(file_name):
-    eps_array = []
-    line_count = 0
-    with open(file_name) as f:
-        csv_reader = csv.reader(f)
-        for row in csv_reader:
-            if line_count == 0 :
-                line_count += 1
-                continue
-            if line_count == NUM_OF_IMAGES:
-                break
-            eps_array.append(row[1])
-    return eps_array
-
-
-def create_cheat_sheet_csv(images, images_index, is_in_range, file_name):
-    header = ['index', 'max_epsilon', 'num_of_runs']
-    if len(images) != len(images_index):
-        raise Exception('indexes list and images list must be the same length')
-    cheat_sheet = []
-    for i in range(len(images)):
-        max_eps, cnt = binary_search([images[i]], 0, 0.1, is_in_range)
-        cheat_sheet.append([images_index[i], max_eps, cnt])
-    with open(file_name, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        writer.writerows(cheat_sheet)
-
-
-def save_single_img_csv(new_file_name, data_to_save):
-    with open(new_file_name, 'w+', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(data_to_save)
-
-
-def run_eran_in_cmd(epsilon, image):
-    """
-        this runs ERAN using the cmd. in order to do so, need to open a new folder for this specific run,
-        the function saves specific image with label at the start, in the folder data, name mnist.test.csv, from which eran then takes
-         the image.
-        """
-    image_with_label = np.insert(image, 0, LABEL)
-    open('../data/mnist_test.csv', 'w').close()
-    save_single_img_csv('../data/mnist_test.csv', image_with_label)
-
-    output = subprocess.check_output(
-        ['python3', '.', '--netname', '/root/models/' + NETWORK_NAME,
-         '--epsilon', str(epsilon), '--domain', 'deepzono', '--dataset', 'mnist'])
-
-    output_str = str(output)
-    return output_str
-
-
-def is_in_range_using_eran_by_cmd(epsilon, image):
-    output_str = run_eran_in_cmd(epsilon, image)
-    new_result = re.findall('analysis precision  ([0,1])', output_str)
-    return new_result[0]
-
-
-# TODO run eran only once
-def labels_confidence_using_eran_by_cmd(epsilon, image):
-    output_str = run_eran_in_cmd(epsilon, image)
-    labels_confidence_str = re.findall('nub  \[(.*?)\]', output_str)
-    confidence_array = np.array(labels_confidence_str[0].split(',')).astype(float)
-
-    return confidence_array
-
-
+########################### This is Dana's functions ###########################
 #ZONOTOPE_EXTENSION = '.zt'
 EPS = 10**(-9)
 
@@ -1594,12 +1326,376 @@ def main_run_eran(img_input, input_epsilon):
         return confidence_arrays,epsilon,verified_images,correctly_classified_images
 
 
+########################### End of Dana's functions ############################
+
+#from geometric_constraints import *
+
+# Press Shift+F10 to execute it or replace it with your code.
+# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+
+
+EPS_IS_LOWER = -1
+EPS_IS_HIGHER = -2
+IMG_NOT_IDENTIFIED = -3
+
+MAX_EPS = 0.05
+MIN_EPS = 0
+
 NETWORK_NAME = 'mnist_relu_3_100.tf'
 LABEL = '0'
 NUM_OF_IMAGES = 10
 START_INDEX = 0
 PRECISION = 4
 TEST = True
+
+CHEAT_SHEET_FILE_NAME = './cheat_sheet_round_label_' + str(LABEL) + '_indx_' + str(START_INDEX) \
+                        + '_to_' + str(START_INDEX + NUM_OF_IMAGES) +'_precision_' + str(PRECISION) + '.csv'
+
+dataset_labels_setup = {
+        'mnist': ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
+        'cifar': ('airplanes', 'cars', 'birds', 'cats', 'deer', 'dogs', 'frogs', 'horses', 'ships', 'trucks')
+    }
+
+dataset_test_labels_setup_func = {
+        'mnist': lambda tl, i: tl[i],
+        'cifar': lambda tl, i: tl[i][0]
+    }
+
+
+class Dataset(object):
+    def __init__(self, name, width, height, train_images, train_labels, test_images, test_labels):
+        self.name = name
+        self.width = width
+        self.height = height
+        self.train_images = train_images
+        self.train_labels = train_labels
+        self.test_images = test_images
+        self.test_labels = test_labels
+        self.labels = []
+        self.organized_images = {}
+        self.dict_to_eran = {}
+        self.create_dict_to_eran()
+        self.set_up_labels()
+
+    def set_up_labels(self):
+        if self.name in dataset_labels_setup:
+            self.labels = dataset_labels_setup[self.name]
+        else:
+            raise Exception('only {} are supported'.format(dataset_labels_setup.keys()))
+
+    def organize_to_labels(self):
+        """
+        input is from class dataset, output is a dictionary, keys are according to labels
+        """
+        organized_images = dict.fromkeys(self.labels)
+        for i in range(len(self.test_labels)):
+            key = self.labels[dataset_test_labels_setup_func[self.name](self.test_labels, i)]
+            if organized_images[key] is None:
+                organized_images[key] = [self.test_images[i]]
+            else:
+                organized_images[key] = np.append(organized_images[key], [self.test_images[i]], axis=0)
+        self.organized_images = organized_images
+
+    def create_dict_to_eran(self):
+        """
+        input is organized dictionary, output is the image in a single array,
+         with the label as the first object in array
+        """
+        dict_to_eran = dict.fromkeys(self.labels)
+        for label in self.labels:
+            dict_to_eran[label] = [np.insert(self.organized_images[label][0], 0, label)]
+            for k in range(1, len(self.organized_images[label])):
+                dict_to_eran[label].append(np.insert(self.organized_images[label][k], 0, label))
+        self.dict_to_eran = dict_to_eran
+
+
+class Image(object):
+    def __init__(self, image, index):
+        self.image = image #label + 28x28 image if MNIST
+        self.index = index
+        self.epsilon = IMG_NOT_IDENTIFIED
+
+def plot(image, label, name):  # input- image (without label). no output. plots image
+
+    print(label)
+    cmap_type = 'viridis'
+    if name == 'mnist':
+        cmap_type = 'gray'
+    plt.imshow(image, cmap=cmap_type)
+    plt.show()
+
+
+def ready_image_for_eran(image, label):
+    image_with_label = np.insert(image, 0, label)
+    return image_with_label
+
+
+def load_dataset(dataset_name, debug=False):
+
+    name = dataset_name.lower().strip()
+
+    if name == 'mnist':
+        (train_images, train_labels), (test_images, test_labels) = keras.datasets.mnist.load_data()
+        img_width = img_height = 28
+    elif name == "cifar":
+        (train_images, train_labels), (test_images, test_labels) = keras.datasets.cifar10.load_data()
+        img_width = img_height = 32
+    else:
+        raise Exception('only mnist and cifar are supported')
+
+    images_dataset = Dataset(name, img_width, img_height, train_images, train_labels, test_images, test_labels)
+    images_dataset.organize_to_labels()
+
+    if debug:
+        plot(images_dataset.test_images[2], images_dataset.test_labels[2], images_dataset.name)
+
+    return images_dataset
+
+
+def binary_search(img, lower_bound, upper_bound, is_in_range):
+
+    if is_in_range(img, lower_bound)[2] == 0:
+        print("epsilon is out of range, too small")
+        return EPS_IS_LOWER, 2
+    if is_in_range(img, upper_bound)[2] == 1:
+        print('epsilon is out of range, too high')
+        return EPS_IS_HIGHER, 2
+
+    cnt = 2
+
+    point = 10**(-PRECISION)
+    while (upper_bound - lower_bound) > point:
+        mid = round(((lower_bound + upper_bound)/2), PRECISION+1)
+        if is_in_range(img, mid)[2] == 1:  # if epsilon >= mid
+            lower_bound = mid
+        else:
+            upper_bound = mid
+        cnt += 1
+    return round(lower_bound, PRECISION), cnt
+
+
+def eran_dummy_func(mid, i):
+    if mid <= 0.0004+i*0.0001:
+        return 1
+    else:
+        return 0
+
+
+def score_func(dataset, epsilon=0):
+    labels_confidence = main_run_eran([dataset[1]], epsilon)[0][0]
+    two_highest_conf_lbl = heapq.nlargest(2, labels_confidence)
+    return abs(two_highest_conf_lbl[0] - two_highest_conf_lbl[1])
+
+
+def test_score_func(a, cheat_sheet):
+
+    return cheat_sheet[a[0]]
+
+
+def choose_index(range_list):
+    #image_index = random.choice(range(len(range_list)))
+    image_index = max(0, (round(len(range_list)/2)-1))
+    return image_index
+
+
+def restart_images_range(dataset, lower_bound, upper_bound):
+    """
+            input is a list of images, it returns 2D list containing
+            initialized range
+    """
+    range_list = []
+    for i in range(len(dataset)):
+        range_list.append([i, dataset[i], lower_bound, upper_bound])
+    return range_list
+
+
+def find_all_epsilons(images_boundaries, is_in_range, floating_point=2):
+
+    cnt = 0
+    epsilon_list = []
+    while images_boundaries:
+        cnt = cnt + 1
+        i = choose_index(images_boundaries)
+        upper_bound = images_boundaries[i][3]
+        lower_bound = images_boundaries[i][2]
+        mid_epsilon = round(((upper_bound+lower_bound)/2), PRECISION+1)
+        # mid_epsilon = (images_boundaries[i]["upper_bound"] + images_boundaries[i]["lower_bound"]) / 2
+        is_robust = is_in_range([images_boundaries[i][1]], mid_epsilon)[2]
+        if is_robust == 1:
+            for j in range(i, len(images_boundaries)):
+                images_boundaries[j][2] = mid_epsilon
+        else:
+            for k in range(0, i+1):
+                images_boundaries[k][3] = mid_epsilon
+
+        if images_boundaries[i][3]-images_boundaries[i][2] <= (10**(-PRECISION)):
+            epsilon = round(images_boundaries[i][2], PRECISION)
+            image_index = images_boundaries[i][0]
+            images_boundaries.pop(i)
+            epsilon_list.append([image_index, epsilon])
+
+    return epsilon_list, cnt
+
+
+def load_data_from_csv(file_name):
+    with open(file_name, newline='') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+    return data
+
+
+def load_cheat_eps_from_txt(file_name):
+    eps_file = open(file_name)
+    eps_array = []
+    for position, line in enumerate(eps_file):
+        new_eps = float(re.findall('max epsilon (.*?) ,', line)[0])
+        eps_array.append(new_eps)
+        if position == NUM_OF_IMAGES-1:
+            break
+    return eps_array
+
+
+def load_cheat_eps_from_csv(file_name):
+    eps_array = []
+    num_of_runs = 0
+    line_count = 0
+    with open(file_name) as f:
+        csv_reader = csv.reader(f)
+        for row in csv_reader:
+            if line_count == 0 :
+                line_count += 1
+                continue
+            if line_count == NUM_OF_IMAGES:
+                break
+            eps_array.append((row[1],row[0]))
+            num_of_runs += row[2]
+    return eps_array, num_of_runs
+
+
+def create_cheat_sheet_csv(images, images_index, is_in_range, file_name):
+    header = ['index', 'max_epsilon', 'num_of_runs']
+    if len(images) != len(images_index):
+        raise Exception('indexes list and images list must be the same length')
+    cheat_sheet = []
+    for i in range(len(images)):
+        max_eps, cnt = binary_search([images[i]], MIN_EPS, MAX_EPS, is_in_range)
+        cheat_sheet.append([images_index[i], max_eps, cnt])
+    with open(file_name, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(cheat_sheet)
+
+
+def save_single_img_csv(new_file_name, data_to_save):
+    with open(new_file_name, 'w+', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(data_to_save)
+
+
+def run_eran_in_cmd(epsilon, image):
+    """
+        this runs ERAN using the cmd. in order to do so, need to open a new folder for this specific run,
+        the function saves specific image with label at the start, in the folder data, name mnist.test.csv, from which eran then takes
+         the image.
+        """
+    image_with_label = np.insert(image, 0, LABEL)
+    open('../data/mnist_test.csv', 'w').close()
+    save_single_img_csv('../data/mnist_test.csv', image_with_label)
+
+    output = subprocess.check_output(
+        ['python3', '.', '--netname', '/root/models/' + NETWORK_NAME,
+         '--epsilon', str(epsilon), '--domain', 'deepzono', '--dataset', 'mnist'])
+
+    output_str = str(output)
+    return output_str
+
+
+def is_in_range_using_eran_by_cmd(epsilon, image):
+    output_str = run_eran_in_cmd(epsilon, image)
+    new_result = re.findall('analysis precision  ([0,1])', output_str)
+    return new_result[0]
+
+
+# TODO run eran only once
+def labels_confidence_using_eran_by_cmd(epsilon, image):
+    output_str = run_eran_in_cmd(epsilon, image)
+    labels_confidence_str = re.findall('nub  \[(.*?)\]', output_str)
+    confidence_array = np.array(labels_confidence_str[0].split(',')).astype(float)
+
+    return confidence_array
+
+
+def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=main_run_eran):
+    if imgs:
+        mid_indx = round(len(imgs)/2)
+
+        mid_img = imgs[mid_indx]
+        mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
+        if mid_img_eps < MIN_EPS:
+            if mid_img_eps == EPS_IS_LOWER:
+                mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, lower, is_in_range)
+            elif mid_img_eps == EPS_IS_HIGHER:
+                mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, upper, MAX_EPS, is_in_range)
+            else:
+                raise Exception("Error: binary_search")
+            if mid_img_eps < MIN_EPS:
+                raise Exception("Error: image epsilon not in boundaries")
+
+            num_of_runs += num_of_runs_after_mistake
+            new_upper = max(upper, mid_img_eps)
+            new_lower = min(lower, mid_img_eps)
+        else:
+            new_upper = new_lower = mid_img_eps
+
+        lower_list = imgs[:mid_indx]
+        lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control(lower_list, lower, new_upper, is_in_range)
+
+        upper_list = imgs[mid_indx+1:]
+        upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control(upper_list, new_lower, upper, is_in_range)
+
+        epsilon_list = lower_eps + [(mid_img_eps, mid_img.index)] + upper_eps
+        total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
+        return epsilon_list, total_runs
+
+    else:
+        return [], 0
+
+
+def save_epsilons_to_csv(eps_list, num_of_iter, path):
+    header = ['max_epsilon', 'index', 'num_of_runs']
+    with open(path, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(eps_list)
+        writer.writerow([num_of_iter, num_of_iter, num_of_iter])
+
+
+def sort_img_correctly(indexed_imgs_list):
+    eps_arr, _ = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
+    sorted(eps_arr, key=lambda eps: eps[1])
+    sorted(indexed_imgs_list, key=lambda img: eps_arr[img.index][0])
+
+def sort_img_by_confidence(indexed_imgs_list):
+    pass # TODO
+
+
+def sort_img_by_score(indexed_imgs_list):
+    if TEST:
+        return sort_img_correctly(indexed_imgs_list)
+    return sort_img_by_confidence(indexed_imgs_list)
+
+
+def create_indexed_img_list_from_dataset(imgs_list):
+    return [Image(imgs_list[i], i) for i in range(len(imgs_list))]
+
+
+def rng_search_all_epsilons(imgs_list):
+    imgs = create_indexed_img_list_from_dataset(imgs_list)
+    sort_img_by_score(imgs)
+    epsilons, runs_num = get_all_eps_with_mistakes_control(imgs)
+    sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
+    return sorted_epsilons, runs_num
+
 
 def main():
     """
@@ -1609,34 +1705,26 @@ def main():
     num_of_classified -> number of pictures which were classified correctly
     :return:
     """
-    input_epsilon = 1.0
     images = load_dataset('mnist')
     images.create_dict_to_eran()
     dataset = images.dict_to_eran
+    imgs_list = dataset[LABEL][:NUM_OF_IMAGES]
 
-    cheat_sheet_file_name = './cheat_sheet_round_label_' + str(LABEL) + '_indx_' + str(START_INDEX) \
-                            + '_to_' + str(START_INDEX + NUM_OF_IMAGES)+'_precision_'+str(PRECISION)+ '.csv'
-    create_cheat_sheet_csv(dataset[LABEL][:NUM_OF_IMAGES], range(NUM_OF_IMAGES), main_run_eran, cheat_sheet_file_name)
-    cheat_table = load_cheat_eps_from_csv(cheat_sheet_file_name)
+    # create cheat sheet
+    create_cheat_sheet_csv(imgs_list, range(NUM_OF_IMAGES), main_run_eran, CHEAT_SHEET_FILE_NAME)
 
-    images_boundaries = restart_images_range(dataset[LABEL][:NUM_OF_IMAGES], 0, 0.05)
-    if TEST:
-        images_bounds_sorted = sorted(images_boundaries, key=lambda image: test_score_func(image, cheat_table))
+    naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
 
-    else:
-        images_bounds_sorted = sorted(images_boundaries, key=lambda image: score_func(image))
+    # new and pretty binary search
+    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons(imgs_list)
 
-    flag =1
-    eps, num_of_iter = find_all_epsilons(images_bounds_sorted, is_in_range=main_run_eran)
+    print('List are identical: ', rng_bin_srch_epsilons == naive_epsilons)
+    print('Naive approach num of runs: ', naive_runs_num)
+    print('Ranged binary search approach num of runs: ', rng_bin_srch_runs_num)
 
-    eps_sorted_indx = sorted(eps, key=itemgetter(0))
-    header = ['index', 'max_epsilon', 'num_of_runs']
-    with open('/root/ERAN/tf_verify/mul_binary_srch_score'+str(LABEL)+'_indx_0_to_'+str(NUM_OF_IMAGES)+'_precision_'+
-              str(PRECISION)+ '.csv', 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        writer.writerows(eps_sorted_indx)
-        writer.writerow([num_of_iter, num_of_iter, num_of_iter])
+    rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(LABEL) + '_indx_0_to_' + str(NUM_OF_IMAGES) + '_precision_' + str(PRECISION) + '.csv'
+    save_epsilons_to_csv(rng_bin_srch_epsilons,rng_bin_srch_runs_num, rng_path)
+
 
 
 main()

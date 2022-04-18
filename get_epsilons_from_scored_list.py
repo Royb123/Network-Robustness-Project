@@ -13,7 +13,7 @@ number = 100
 def add_mistakes_to_imgs(imgs):
     num_of_mistakes = random.randint(1, num_of_images//20)
     for mistake in range(num_of_mistakes):
-        indx1= random.randint(0, len(imgs)-1)
+        indx1 = random.randint(0, len(imgs)-1)
         indx2 = random.randint(0, len(imgs)-1)
         imgs.insert(indx1,imgs.pop(indx2))
     return imgs

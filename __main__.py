@@ -1673,19 +1673,20 @@ def labels_confidence_using_eran_by_cmd(epsilon, image):
 
 
 def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
+    user_logger.info("rng binary_search: ")
+
     if imgs:
         mid_indx = round(len(imgs)/2)
 
         mid_img = imgs[mid_indx]
         mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
-        user_logger.info("rng binary_search: ")
         if mid_img_eps < MIN_EPS:
             if mid_img_eps == EPS_IS_LOWER:
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, lower, is_in_range)
-                user_logger.info("out of scope lower rng binary_search: ")
+                user_logger.warning("out of scope lower rng binary_search: ")
             elif mid_img_eps == EPS_IS_HIGHER:
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, upper, MAX_EPS, is_in_range)
-                user_logger.info("out of scope rng upper binary_search: ")
+                user_logger.warning("out of scope rng upper binary_search: ")
             else:
                 raise Exception("Error: binary_search")
             if mid_img_eps < MIN_EPS:
@@ -1723,7 +1724,7 @@ def save_epsilons_to_csv(eps_list, num_of_iter, path):
 def sort_img_correctly(indexed_imgs_list):
     eps_arr, _ = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
     sorted(eps_arr, key=lambda eps: eps[1])
-    sorted(indexed_imgs_list, key=lambda img: eps_arr[img.index][0])
+    sorted(indexed_imgs_list, key=lambda img: eps_arr[img.index][0], reverse=True)
 
 def sort_img_by_confidence(indexed_imgs_list):
     sorted(indexed_imgs_list, key=lambda img: score_func(img.image))
@@ -1768,11 +1769,11 @@ def main():
     # new and pretty binary search
     rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons(imgs_list)
 
-    user_logger.info('Naive approach num of runs: ', naive_runs_num)
-    user_logger.info('Ranged binary search approach num of runs: ', rng_bin_srch_runs_num)
-    user_logger.info('rng_bin_srch_epsilons: ', rng_bin_srch_epsilons)
-    user_logger.info('naive_epsilons: ', naive_epsilons)
-    user_logger.info('List are identical: ', rng_bin_srch_epsilons == naive_epsilons)
+    user_logger.info('Naive approach num of runs: {}'.format(naive_runs_num))
+    user_logger.info('Ranged binary search approach num of runs: {}'.format(rng_bin_srch_runs_num))
+    user_logger.info('rng_bin_srch_epsilons: {}'.format(rng_bin_srch_epsilons))
+    user_logger.info('naive_epsilons: {}'.format(naive_epsilons))
+    user_logger.info('List are identical: {}'.format(rng_bin_srch_epsilons == naive_epsilons))
 
     rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(LABEL) + '_indx_0_to_' + str(NUM_OF_IMAGES) + '_precision_' + str(PRECISION) + '.csv'
     save_epsilons_to_csv(rng_bin_srch_epsilons,rng_bin_srch_runs_num, rng_path)

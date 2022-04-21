@@ -1373,9 +1373,11 @@ def enable_print():
 def run_eran(img_input, input_epsilon, supress_print=True):
     if supress_print:
         block_print()
-    main_run_eran(img_input, input_epsilon)
+    ret = main_run_eran(img_input, input_epsilon)
     if supress_print:
         enable_print()
+
+    return ret
 
 class Dataset(object):
     def __init__(self, name, width, height, train_images, train_labels, test_images, test_labels):

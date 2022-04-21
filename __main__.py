@@ -1619,18 +1619,19 @@ def load_cheat_eps_from_csv(file_name):
 
 
 def create_cheat_sheet_csv(images, images_index, is_in_range, file_name):
-    header = ['index', 'max_epsilon', 'num_of_runs']
-    if len(images) != len(images_index):
-        raise Exception('indexes list and images list must be the same length')
-    cheat_sheet = []
-    for i in range(len(images)):
-        max_eps, cnt = binary_search(images[i], MIN_EPS, MAX_EPS, is_in_range)
-        user_logger.info("bin srch: index {}. eps {}. runs {} ".format(i, max_eps, cnt))
-        cheat_sheet.append([images_index[i], max_eps, cnt])
-    with open(file_name, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        writer.writerows(cheat_sheet)
+    if not os.path.exists(file_name):
+        header = ['index', 'max_epsilon', 'num_of_runs']
+        if len(images) != len(images_index):
+            raise Exception('indexes list and images list must be the same length')
+        cheat_sheet = []
+        for i in range(len(images)):
+            max_eps, cnt = binary_search(images[i], MIN_EPS, MAX_EPS, is_in_range)
+            user_logger.info("bin srch: index {}. eps {}. runs {} ".format(i, max_eps, cnt))
+            cheat_sheet.append([images_index[i], max_eps, cnt])
+        with open(file_name, 'w') as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerows(cheat_sheet)
 
 
 def save_single_img_csv(new_file_name, data_to_save):
@@ -1723,11 +1724,11 @@ def save_epsilons_to_csv(eps_list, num_of_iter, path):
 
 def sort_img_correctly(indexed_imgs_list):
     eps_arr, _ = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
-    user_logger.debug("sort_img_correctly: loaded {}".format(eps_arr))
+    user_logger.info("sort_img_correctly: loaded {}".format(eps_arr))
     sorted(eps_arr, key=lambda eps: eps[1])
-    user_logger.debug("sort_img_correctly: sorted epsilons {}".format(eps_arr))
+    user_logger.info("sort_img_correctly: sorted epsilons {}".format(eps_arr))
     sorted(indexed_imgs_list, key=lambda img: eps_arr[img.index][0])
-    user_logger.debug("sort_img_correctly: sorted imgs {}".format([img.index for img in indexed_imgs_list]))
+    user_logger.info("sort_img_correctly: sorted imgs {}".format([img.index for img in indexed_imgs_list]))
 
 
 def sort_img_by_confidence(indexed_imgs_list):

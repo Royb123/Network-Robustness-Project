@@ -1725,14 +1725,14 @@ def save_epsilons_to_csv(eps_list, num_of_iter, path):
 def sort_img_correctly(indexed_imgs_list):
     eps_arr, _ = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
     user_logger.info("sort_img_correctly: loaded {}".format(eps_arr))
-    sorted(eps_arr, key=lambda eps: eps[1])
-    user_logger.info("sort_img_correctly: sorted epsilons {}".format(eps_arr))
-    sorted(indexed_imgs_list, key=lambda img: eps_arr[img.index][0])
-    user_logger.info("sort_img_correctly: sorted imgs {}".format([img.index for img in indexed_imgs_list]))
-
+    sorted_eps_arr = sorted(eps_arr, key=lambda eps: eps[1])
+    user_logger.info("sort_img_correctly: sorted epsilons {}".format(sorted_eps_arr))
+    sorted_imgs = sorted(indexed_imgs_list, key=lambda img: sorted_eps_arr[img.index][0])
+    user_logger.info("sort_img_correctly: sorted imgs {}".format([img.index for img in sorted_imgs]))
+    return sorted_imgs
 
 def sort_img_by_confidence(indexed_imgs_list):
-    sorted(indexed_imgs_list, key=lambda img: score_func(img.image))
+    return sorted(indexed_imgs_list, key=lambda img: score_func(img.image))
 
 def sort_img_by_score(indexed_imgs_list):
     if TEST:
@@ -1746,8 +1746,8 @@ def create_indexed_img_list_from_dataset(imgs_list):
 
 def rng_search_all_epsilons(imgs_list):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
-    sort_img_by_score(imgs)
-    epsilons, runs_num = get_all_eps_with_mistakes_control(imgs)
+    sorted_imgs = sort_img_by_score(imgs)
+    epsilons, runs_num = get_all_eps_with_mistakes_control(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
 

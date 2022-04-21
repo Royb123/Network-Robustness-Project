@@ -1362,6 +1362,21 @@ dataset_test_labels_setup_func = {
     }
 
 
+def block_print():
+    sys.stdout = open(os.devnull, 'w')
+
+
+# Restore
+def enable_print():
+    sys.stdout = sys.__stdout__
+
+def run_eran(img_input, input_epsilon, supress_print=True):
+    if supress_print:
+        block_print()
+    main_run_eran(img_input, input_epsilon)
+    if supress_print:
+        enable_print()
+
 class Dataset(object):
     def __init__(self, name, width, height, train_images, train_labels, test_images, test_labels):
         self.name = name
@@ -1458,12 +1473,16 @@ def load_dataset(dataset_name, debug=False):
 
 
 def binary_search(img, lower_bound, upper_bound, is_in_range):
+    print(" low {}. up {}.".format(lower_bound, upper_bound))
 
     if is_in_range([img], lower_bound)[2] == 0:
         print("epsilon is out of range, too small")
+        print(" runs {}.".format( 2))
         return EPS_IS_LOWER, 2
+
     if is_in_range([img], upper_bound)[2] == 1:
         print('epsilon is out of range, too high')
+        print(" runs {}.".format(2))
         return EPS_IS_HIGHER, 2
 
     cnt = 2
@@ -1476,6 +1495,8 @@ def binary_search(img, lower_bound, upper_bound, is_in_range):
         else:
             upper_bound = mid
         cnt += 1
+
+    print("eps {}. runs {}.".format(lower_bound, cnt))
     return round(lower_bound, PRECISION), cnt
 
 
@@ -1487,7 +1508,7 @@ def eran_dummy_func(mid, i):
 
 
 def score_func(img, epsilon=MIN_EPS):
-    labels_confidence = main_run_eran([img], epsilon)[0][0]
+    labels_confidence = run_eran([img], epsilon)[0][0]
     two_highest_conf_lbl = heapq.nlargest(2, labels_confidence)
     return abs(two_highest_conf_lbl[0] - two_highest_conf_lbl[1])
 
@@ -1584,6 +1605,7 @@ def create_cheat_sheet_csv(images, images_index, is_in_range, file_name):
     cheat_sheet = []
     for i in range(len(images)):
         max_eps, cnt = binary_search(images[i], MIN_EPS, MAX_EPS, is_in_range)
+        print("bin srch: index {}. eps {}. runs {} ".format(i, max_eps, cnt))
         cheat_sheet.append([images_index[i], max_eps, cnt])
     with open(file_name, 'w') as f:
         writer = csv.writer(f)
@@ -1630,17 +1652,20 @@ def labels_confidence_using_eran_by_cmd(epsilon, image):
     return confidence_array
 
 
-def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=main_run_eran):
+def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
     if imgs:
         mid_indx = round(len(imgs)/2)
 
         mid_img = imgs[mid_indx]
         mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
+        print("rng binary_search: ")
         if mid_img_eps < MIN_EPS:
             if mid_img_eps == EPS_IS_LOWER:
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, lower, is_in_range)
+                print("out of scope lower rng binary_search: ")
             elif mid_img_eps == EPS_IS_HIGHER:
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, upper, MAX_EPS, is_in_range)
+                print("out of scope rng upper binary_search: ")
             else:
                 raise Exception("Error: binary_search")
             if mid_img_eps < MIN_EPS:
@@ -1715,7 +1740,7 @@ def main():
     imgs_list = dataset[LABEL][:NUM_OF_IMAGES]
 
     # create cheat sheet
-    create_cheat_sheet_csv(imgs_list, range(NUM_OF_IMAGES), main_run_eran, CHEAT_SHEET_FILE_NAME)
+    create_cheat_sheet_csv(imgs_list, range(NUM_OF_IMAGES), run_eran, CHEAT_SHEET_FILE_NAME)
 
     naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
 

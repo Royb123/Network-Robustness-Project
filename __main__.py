@@ -1336,7 +1336,7 @@ if True:
 
 EPS_IS_LOWER = -1
 EPS_IS_HIGHER = -2
-IMG_NOT_IDENTIFIED = -3
+EPS_UNDEFINED = -3
 
 MAX_EPS = 0.05
 MIN_EPS = 0
@@ -1413,7 +1413,12 @@ class Image(object):
     def __init__(self, image, index):
         self.image = image #label + 28x28 image if MNIST
         self.index = index
-        self.epsilon = IMG_NOT_IDENTIFIED
+
+
+class Epsilon(float):
+    def __eq__(self, other):
+        return abs(self.real - other.real ) < 10 ** PRECISION
+
 
 def plot(image, label, name):  # input- image (without label). no output. plots image
 
@@ -1567,7 +1572,7 @@ def load_cheat_eps_from_csv(file_name):
                 continue
             if line_count == NUM_OF_IMAGES:
                 break
-            eps_array.append((float(row[1]), float(row[0])))
+            eps_array.append((Epsilon(row[1]), int(row[0])))
             num_of_runs += int(row[2])
     return eps_array, num_of_runs
 
@@ -1653,7 +1658,7 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
         upper_list = imgs[mid_indx+1:]
         upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control(upper_list, new_lower, upper, is_in_range)
 
-        epsilon_list = lower_eps + [(mid_img_eps, mid_img.index)] + upper_eps
+        epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
         total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
         return epsilon_list, total_runs
 
@@ -1718,9 +1723,11 @@ def main():
     # new and pretty binary search
     rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons(imgs_list)
 
-    print('List are identical: ', rng_bin_srch_epsilons == naive_epsilons)
     print('Naive approach num of runs: ', naive_runs_num)
     print('Ranged binary search approach num of runs: ', rng_bin_srch_runs_num)
+    print('rng_bin_srch_epsilons: ', rng_bin_srch_epsilons)
+    print('naive_epsilons: ', naive_epsilons)
+    print('List are identical: ', rng_bin_srch_epsilons == naive_epsilons)
 
     rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(LABEL) + '_indx_0_to_' + str(NUM_OF_IMAGES) + '_precision_' + str(PRECISION) + '.csv'
     save_epsilons_to_csv(rng_bin_srch_epsilons,rng_bin_srch_runs_num, rng_path)

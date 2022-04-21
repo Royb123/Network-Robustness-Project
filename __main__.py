@@ -1364,11 +1364,13 @@ dataset_test_labels_setup_func = {
 
 def block_print():
     sys.stdout = open(os.devnull, 'w')
+    sys.stderr = open(os.devnull, 'w')
 
 
 # Restore
 def enable_print():
     sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
 
 def run_eran(img_input, input_epsilon, supress_print=True):
     if supress_print:

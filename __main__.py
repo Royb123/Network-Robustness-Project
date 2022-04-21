@@ -1372,7 +1372,7 @@ def enable_print():
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
 
-def run_eran(img_input, input_epsilon, supress_print=True):
+def run_eran(img_input, input_epsilon, supress_print=False):
     if supress_print:
         block_print()
     ret = main_run_eran(img_input, input_epsilon)
@@ -1380,6 +1380,22 @@ def run_eran(img_input, input_epsilon, supress_print=True):
         enable_print()
 
     return ret
+
+
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+def setup_logger(name, log_file, level=logging.INFO):
+    """To setup as many loggers as you want"""
+
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+user_logger = setup_logger("user_logger", "/tmp/user_logger")
 
 class Dataset(object):
     def __init__(self, name, width, height, train_images, train_labels, test_images, test_labels):
@@ -1477,16 +1493,16 @@ def load_dataset(dataset_name, debug=False):
 
 
 def binary_search(img, lower_bound, upper_bound, is_in_range):
-    print(" low {}. up {}.".format(lower_bound, upper_bound))
+    user_logger.info(" low {}. up {}.".format(lower_bound, upper_bound))
 
     if is_in_range([img], lower_bound)[2] == 0:
-        print("epsilon is out of range, too small")
-        print(" runs {}.".format( 2))
+        user_logger.info("epsilon is out of range, too small")
+        user_logger.info(" runs {}.".format( 2))
         return EPS_IS_LOWER, 2
 
     if is_in_range([img], upper_bound)[2] == 1:
-        print('epsilon is out of range, too high')
-        print(" runs {}.".format(2))
+        user_logger.info('epsilon is out of range, too high')
+        user_logger.info(" runs {}.".format(2))
         return EPS_IS_HIGHER, 2
 
     cnt = 2
@@ -1500,7 +1516,7 @@ def binary_search(img, lower_bound, upper_bound, is_in_range):
             upper_bound = mid
         cnt += 1
 
-    print("eps {}. runs {}.".format(lower_bound, cnt))
+    user_logger.info("eps {}. runs {}.".format(lower_bound, cnt))
     return round(lower_bound, PRECISION), cnt
 
 
@@ -1609,7 +1625,7 @@ def create_cheat_sheet_csv(images, images_index, is_in_range, file_name):
     cheat_sheet = []
     for i in range(len(images)):
         max_eps, cnt = binary_search(images[i], MIN_EPS, MAX_EPS, is_in_range)
-        print("bin srch: index {}. eps {}. runs {} ".format(i, max_eps, cnt))
+        user_logger.info("bin srch: index {}. eps {}. runs {} ".format(i, max_eps, cnt))
         cheat_sheet.append([images_index[i], max_eps, cnt])
     with open(file_name, 'w') as f:
         writer = csv.writer(f)
@@ -1662,14 +1678,14 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
 
         mid_img = imgs[mid_indx]
         mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
-        print("rng binary_search: ")
+        user_logger.info("rng binary_search: ")
         if mid_img_eps < MIN_EPS:
             if mid_img_eps == EPS_IS_LOWER:
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, lower, is_in_range)
-                print("out of scope lower rng binary_search: ")
+                user_logger.info("out of scope lower rng binary_search: ")
             elif mid_img_eps == EPS_IS_HIGHER:
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, upper, MAX_EPS, is_in_range)
-                print("out of scope rng upper binary_search: ")
+                user_logger.info("out of scope rng upper binary_search: ")
             else:
                 raise Exception("Error: binary_search")
             if mid_img_eps < MIN_EPS:
@@ -1738,6 +1754,7 @@ def main():
     num_of_classified -> number of pictures which were classified correctly
     :return:
     """
+    user_logger.info("######################## start logging ########################")
     images = load_dataset('mnist')
     images.create_dict_to_eran()
     dataset = images.dict_to_eran
@@ -1751,15 +1768,16 @@ def main():
     # new and pretty binary search
     rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons(imgs_list)
 
-    print('Naive approach num of runs: ', naive_runs_num)
-    print('Ranged binary search approach num of runs: ', rng_bin_srch_runs_num)
-    print('rng_bin_srch_epsilons: ', rng_bin_srch_epsilons)
-    print('naive_epsilons: ', naive_epsilons)
-    print('List are identical: ', rng_bin_srch_epsilons == naive_epsilons)
+    user_logger.info('Naive approach num of runs: ', naive_runs_num)
+    user_logger.info('Ranged binary search approach num of runs: ', rng_bin_srch_runs_num)
+    user_logger.info('rng_bin_srch_epsilons: ', rng_bin_srch_epsilons)
+    user_logger.info('naive_epsilons: ', naive_epsilons)
+    user_logger.info('List are identical: ', rng_bin_srch_epsilons == naive_epsilons)
 
     rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(LABEL) + '_indx_0_to_' + str(NUM_OF_IMAGES) + '_precision_' + str(PRECISION) + '.csv'
     save_epsilons_to_csv(rng_bin_srch_epsilons,rng_bin_srch_runs_num, rng_path)
 
+    user_logger.info("######################## end of logging ########################")
 
 
 main()

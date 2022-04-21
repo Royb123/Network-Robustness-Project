@@ -1343,10 +1343,10 @@ MIN_EPS = 0
 
 NETWORK_NAME = 'mnist_relu_3_100.tf'
 LABEL = '0'
-NUM_OF_IMAGES = 12
+NUM_OF_IMAGES = 100
 START_INDEX = 0
 PRECISION = 4
-TEST = True
+TEST = False
 
 CHEAT_SHEET_FILE_NAME = './cheat_sheet_round_label_' + str(LABEL) + '_indx_' + str(START_INDEX) \
                         + '_to_' + str(START_INDEX + NUM_OF_IMAGES) +'_precision_' + str(PRECISION) + '.csv'

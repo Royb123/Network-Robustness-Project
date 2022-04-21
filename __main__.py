@@ -1486,8 +1486,8 @@ def eran_dummy_func(mid, i):
         return 0
 
 
-def score_func(dataset, epsilon=0):
-    labels_confidence = main_run_eran([dataset[1]], epsilon)[0][0]
+def score_func(img, epsilon=MIN_EPS):
+    labels_confidence = main_run_eran([img], epsilon)[0][0]
     two_highest_conf_lbl = heapq.nlargest(2, labels_confidence)
     return abs(two_highest_conf_lbl[0] - two_highest_conf_lbl[1])
 
@@ -1681,8 +1681,7 @@ def sort_img_correctly(indexed_imgs_list):
     sorted(indexed_imgs_list, key=lambda img: eps_arr[img.index][0])
 
 def sort_img_by_confidence(indexed_imgs_list):
-    pass # TODO
-
+    sorted(indexed_imgs_list, key=lambda img: score_func(img.image))
 
 def sort_img_by_score(indexed_imgs_list):
     if TEST:

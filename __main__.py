@@ -1723,8 +1723,12 @@ def save_epsilons_to_csv(eps_list, num_of_iter, path):
 
 def sort_img_correctly(indexed_imgs_list):
     eps_arr, _ = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
+    user_logger.debug("sort_img_correctly: loaded {}".format(eps_arr))
     sorted(eps_arr, key=lambda eps: eps[1])
-    sorted(indexed_imgs_list, key=lambda img: eps_arr[img.index][0], reverse=True)
+    user_logger.debug("sort_img_correctly: sorted epsilons {}".format(eps_arr))
+    sorted(indexed_imgs_list, key=lambda img: eps_arr[img.index][0])
+    user_logger.debug("sort_img_correctly: sorted imgs {}".format([img.index for img in indexed_imgs_list]))
+
 
 def sort_img_by_confidence(indexed_imgs_list):
     sorted(indexed_imgs_list, key=lambda img: score_func(img.image))

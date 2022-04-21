@@ -1337,16 +1337,18 @@ if True:
 EPS_IS_LOWER = -1
 EPS_IS_HIGHER = -2
 EPS_UNDEFINED = -3
+IMG_UNRECOGNIZABLE = -4
 
 MAX_EPS = 0.05
 MIN_EPS = 0
 
 NETWORK_NAME = 'mnist_relu_3_100.tf'
 LABEL = '0'
-NUM_OF_IMAGES = 100
+NUM_OF_IMAGES = 1000
 START_INDEX = 0
 PRECISION = 4
 TEST = False
+LOGGER_PATH = r"/root/logging/user_logger"
 
 CHEAT_SHEET_FILE_NAME = './cheat_sheet_round_label_' + str(LABEL) + '_indx_' + str(START_INDEX) \
                         + '_to_' + str(START_INDEX + NUM_OF_IMAGES) +'_precision_' + str(PRECISION) + '.csv'
@@ -1395,7 +1397,7 @@ def setup_logger(name, log_file, level=logging.INFO):
 
     return logger
 
-user_logger = setup_logger("user_logger", "/tmp/user_logger")
+user_logger = setup_logger("user_logger", LOGGER_PATH)
 
 class Dataset(object):
     def __init__(self, name, width, height, train_images, train_labels, test_images, test_labels):
@@ -1690,12 +1692,19 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
                 user_logger.warning("out of scope rng upper binary_search: ")
             else:
                 raise Exception("Error: binary_search")
-            if mid_img_eps < MIN_EPS:
-                raise Exception("Error: image epsilon not in boundaries")
 
             num_of_runs += num_of_runs_after_mistake
-            new_upper = max(upper, mid_img_eps)
-            new_lower = min(lower, mid_img_eps)
+
+            if mid_img_eps < MIN_EPS:
+                # epsilon is out of boundaries
+                new_upper = upper
+                new_lower = lower
+                if mid_img_eps == EPS_IS_HIGHER:
+                    user_logger.error("GREAT EPSILON!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            else:
+                new_upper = max(upper, mid_img_eps)
+                new_lower = min(lower, mid_img_eps)
+
         else:
             new_upper = new_lower = mid_img_eps
 

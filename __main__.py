@@ -51,6 +51,8 @@ import subprocess
 import heapq
 from operator import itemgetter
 import re
+import time
+
 
 ########################### This is Dana's functions ###########################
 if True:
@@ -1769,6 +1771,7 @@ def main():
     num_of_classified -> number of pictures which were classified correctly
     :return:
     """
+    start_time = time.time()
     user_logger.info("######################## start logging ########################")
     images = load_dataset('mnist')
     images.create_dict_to_eran()
@@ -1782,14 +1785,19 @@ def main():
 
     # new and pretty binary search
     rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons(imgs_list)
+    end_time = time.time()
+    elapsed_time = (start_time-end_time)/60 #convert to minutes
 
+    user_logger.info('Execution time: {} minutes'. format(elapsed_time))
+    user_logger.info('Network: {network}, number of images: {img_num}, digit: {digit}'.format(network=NETWORK_NAME, img_num=NUM_OF_IMAGES, digit=LABEL, ))
     user_logger.info('Naive approach num of runs: {}'.format(naive_runs_num))
     user_logger.info('Ranged binary search approach num of runs: {}'.format(rng_bin_srch_runs_num))
     user_logger.info('rng_bin_srch_epsilons: {}'.format(rng_bin_srch_epsilons))
     user_logger.info('naive_epsilons: {}'.format(naive_epsilons))
     user_logger.info('List are identical: {}'.format(rng_bin_srch_epsilons == naive_epsilons))
 
-    rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(LABEL) + '_indx_0_to_' + str(NUM_OF_IMAGES) + '_precision_' + str(PRECISION) + '.csv'
+    rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(LABEL) + '_indx_0_to_' + str(NUM_OF_IMAGES) \
+               + '_precision_' + str(PRECISION) + '.csv'
     save_epsilons_to_csv(rng_bin_srch_epsilons,rng_bin_srch_runs_num, rng_path)
 
     user_logger.info("######################## end of logging ########################")

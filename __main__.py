@@ -1345,8 +1345,8 @@ MAX_EPS = 0.05
 MIN_EPS = 0
 
 NETWORK_NAME = 'mnist_relu_3_100.tf'
-LABEL = '2'
-NUM_OF_IMAGES = 1000
+LABEL = '0'
+NUM_OF_IMAGES = 980
 START_INDEX = 0
 PRECISION = 4
 TEST = False
@@ -1776,10 +1776,10 @@ def main():
     images = load_dataset('mnist')
     images.create_dict_to_eran()
     dataset = images.dict_to_eran
-    imgs_list = dataset[LABEL][:NUM_OF_IMAGES]
+    imgs_list = dataset[LABEL][:NUM_OF_IMAGES-1]
 
     # create cheat sheet
-    create_cheat_sheet_csv(imgs_list, range(NUM_OF_IMAGES), run_eran, CHEAT_SHEET_FILE_NAME)
+    create_cheat_sheet_csv(imgs_list, range(NUM_OF_IMAGES-1), run_eran, CHEAT_SHEET_FILE_NAME)
 
     naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
 

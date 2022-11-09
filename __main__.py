@@ -52,7 +52,7 @@ import heapq
 from operator import itemgetter
 import re
 import time
-
+import json
 
 ########################### This is Dana's functions ###########################
 if True:
@@ -1732,6 +1732,23 @@ def save_epsilons_to_csv(eps_list, num_of_iter, path):
         writer.writerows(eps_list)
         writer.writerow([num_of_iter, num_of_iter, num_of_iter])
 
+def create_default_json_file(path):
+    if not os.path.exists(path):
+        with open(path, "w+") as f:
+            json.dump({}, f)
+def save_runs_num(runs_num_file, runs_num, method="naive", network=NETWORK_NAME, label=LABEL, num_of_images=NUM_OF_IMAGES, precision=PRECISION):
+    create_default_json_file(runs_num_file)
+    with open(runs_num_file, "r") as f:
+        runs_num_dict = json.load(f)
+
+    key = (method, network, label, num_of_images, precision)
+
+    if key in runs_num_dict:
+        if runs_num not in runs_num_dict[key]:
+            user_logger.error("new runs_num for same key. save new num {}".format(runs_num))
+            runs_num_dict[key].append(runs_num)
+    else:
+        runs_num_dict[key] = [runs_num]
 
 def sort_img_correctly(indexed_imgs_list):
     eps_arr, _ = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
@@ -1761,7 +1778,6 @@ def rng_search_all_epsilons(imgs_list):
     epsilons, runs_num = get_all_eps_with_mistakes_control(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
-
 
 def main():
     """
@@ -1798,9 +1814,15 @@ def main():
 
     rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(LABEL) + '_indx_0_to_' + str(NUM_OF_IMAGES) \
                + '_precision_' + str(PRECISION) + '.csv'
-    save_epsilons_to_csv(rng_bin_srch_epsilons,rng_bin_srch_runs_num, rng_path)
+    save_epsilons_to_csv(rng_bin_srch_epsilons, rng_bin_srch_runs_num, rng_path)
+
+    runs_num_path = '/root/ERAN/tf_verify/outcomes.json'
+    save_runs_num(runs_num_path, naive_runs_num, method="naive")
+    save_runs_num(runs_num_path, rng_bin_srch_runs_num, method="rng_bin_srch_by_confidence")
 
     user_logger.info("######################## end of logging ########################")
+
+
 
 
 main()

@@ -1820,8 +1820,8 @@ def run_and_check_one_iteration(num_imgs, label):
     save_epsilons_to_csv(rng_bin_srch_epsilons, rng_bin_srch_runs_num, rng_path)
 
     runs_num_path = '/root/ERAN/tf_verify/outcomes.json'
-    save_runs_num(runs_num_path, naive_runs_num, method="naive", label=label, num_of_images=num_imgs)
-    save_runs_num(runs_num_path, rng_bin_srch_runs_num, method="rng_bin_srch_by_confidence", label=label, num_of_images=num_imgs)
+    save_runs_num(runs_num_path, naive_runs_num, method="naive", label=label, num_of_images=num_imgs, network=config.netname)
+    save_runs_num(runs_num_path, rng_bin_srch_runs_num, method="rng_bin_srch_by_confidence", label=label, num_of_images=num_imgs, network=config.netname)
 
     user_logger.info("######################## end of logging ########################")
 

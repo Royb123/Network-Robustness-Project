@@ -1731,7 +1731,8 @@ def create_default_json_file(path):
     if not os.path.exists(path):
         with open(path, "w+") as f:
             json.dump({}, f)
-def save_runs_num(runs_num_file, runs_num, method, label, num_of_images, network=config.netname, precision=PRECISION):
+def save_runs_num(runs_num_file, runs_num, method, label, num_of_images, network, precision=PRECISION):
+    user_logger.info("pasten - {}".format(runs_num_file))
     create_default_json_file(runs_num_file)
     with open(runs_num_file, "r") as f:
         runs_num_dict = json.load(f)

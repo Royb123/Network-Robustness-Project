@@ -308,10 +308,7 @@ if True:
         else:
             return d
 
-
-    def main_run_eran(img_input, input_epsilon):
-        confidence_arrays=[]
-
+    def parse_args():
         parser = argparse.ArgumentParser(description='ERAN Example',  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument('--netname', type=isnetworkfile, default=config.netname, help='the network name, the extension can be only .pb, .pyt, .tf, .meta, and .onnx')
         parser.add_argument('--epsilon', type=float, default=config.epsilon, help='the epsilon for L_infinity perturbation')
@@ -358,6 +355,10 @@ if True:
         for k, v in vars(args).items():
             setattr(config, k, v)
         config.json = vars(args)
+
+
+    def main_run_eran(img_input, input_epsilon):
+        confidence_arrays=[]
 
         if config.specnumber and not config.input_box and not config.output_constraints:
             config.input_box = '../data/acasxu/specs/acasxu_prop_' + str(config.specnumber) + '_input_prenormalized.txt'
@@ -1344,7 +1345,6 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-NETWORK_NAME = 'mnist_relu_3_100.tf'
 LABEL = '0'
 NUM_OF_IMAGES = 980
 START_INDEX = 0
@@ -1655,7 +1655,7 @@ def run_eran_in_cmd(epsilon, image):
     save_single_img_csv('../data/mnist_test.csv', image_with_label)
 
     output = subprocess.check_output(
-        ['python3', '.', '--netname', '/root/models/' + NETWORK_NAME,
+        ['python3', '.', '--netname', '/root/' + config.netname,
          '--epsilon', str(epsilon), '--domain', 'deepzono', '--dataset', 'mnist'])
 
     output_str = str(output)
@@ -1736,12 +1736,12 @@ def create_default_json_file(path):
     if not os.path.exists(path):
         with open(path, "w+") as f:
             json.dump({}, f)
-def save_runs_num(runs_num_file, runs_num, method="naive", network=NETWORK_NAME, label=LABEL, num_of_images=NUM_OF_IMAGES, precision=PRECISION):
+def save_runs_num(runs_num_file, runs_num, method="naive", network=config.netname, label=LABEL, num_of_images=NUM_OF_IMAGES, precision=PRECISION):
     create_default_json_file(runs_num_file)
     with open(runs_num_file, "r") as f:
         runs_num_dict = json.load(f)
 
-    key = (method, network, label, num_of_images, precision)
+    key = (method, os.path.basename(network), label, num_of_images, precision)
 
     if key in runs_num_dict:
         if runs_num not in runs_num_dict[key]:
@@ -1787,6 +1787,9 @@ def main():
     num_of_classified -> number of pictures which were classified correctly
     :return:
     """
+
+    parse_args()
+
     start_time = time.time()
     user_logger.info("######################## start logging ########################")
     images = load_dataset('mnist')
@@ -1805,7 +1808,7 @@ def main():
     elapsed_time = (start_time-end_time)/60 #convert to minutes
 
     user_logger.info('Execution time: {} minutes'. format(elapsed_time))
-    user_logger.info('Network: {network}, number of images: {img_num}, digit: {digit}'.format(network=NETWORK_NAME, img_num=NUM_OF_IMAGES, digit=LABEL, ))
+    user_logger.info('Network: {network}, number of images: {img_num}, digit: {digit}'.format(network=config.netname, img_num=NUM_OF_IMAGES, digit=LABEL, ))
     user_logger.info('Naive approach num of runs: {}'.format(naive_runs_num))
     user_logger.info('Ranged binary search approach num of runs: {}'.format(rng_bin_srch_runs_num))
     user_logger.info('rng_bin_srch_epsilons: {}'.format(rng_bin_srch_epsilons))

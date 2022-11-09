@@ -1345,9 +1345,6 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-LABEL = '0'
-NUM_OF_IMAGES = 980
-START_INDEX = 0
 PRECISION = 4
 TEST = False
 LOGGER_PATH = r"/root/logging/user_logger"
@@ -1594,18 +1591,18 @@ def load_data_from_csv(file_name):
     return data
 
 
-def load_cheat_eps_from_txt(file_name):
+def load_cheat_eps_from_txt(file_name, num_of_imgs):
     eps_file = open(file_name)
     eps_array = []
     for position, line in enumerate(eps_file):
         new_eps = float(re.findall('max epsilon (.*?) ,', line)[0])
         eps_array.append(new_eps)
-        if position == NUM_OF_IMAGES-1:
+        if position == num_of_imgs-1:
             break
     return eps_array
 
 
-def load_cheat_eps_from_csv(file_name):
+def load_cheat_eps_from_csv(file_name, num_imgs):
     eps_array = []
     num_of_runs = 0
     line_count = 0
@@ -1615,7 +1612,7 @@ def load_cheat_eps_from_csv(file_name):
             if line_count == 0:
                 line_count += 1
                 continue
-            if line_count == NUM_OF_IMAGES:
+            if line_count == num_imgs:
                 break
             eps_array.append((Epsilon(row[1]), int(row[0])))
             num_of_runs += int(row[2])
@@ -1736,7 +1733,7 @@ def create_default_json_file(path):
     if not os.path.exists(path):
         with open(path, "w+") as f:
             json.dump({}, f)
-def save_runs_num(runs_num_file, runs_num, method="naive", network=config.netname, label=LABEL, num_of_images=NUM_OF_IMAGES, precision=PRECISION):
+def save_runs_num(runs_num_file, runs_num, method, label, num_of_images, network=config.netname, precision=PRECISION):
     create_default_json_file(runs_num_file)
     with open(runs_num_file, "r") as f:
         runs_num_dict = json.load(f)
@@ -1750,8 +1747,8 @@ def save_runs_num(runs_num_file, runs_num, method="naive", network=config.netnam
     else:
         runs_num_dict[key] = [runs_num]
 
-def sort_img_correctly(indexed_imgs_list):
-    eps_arr, _ = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
+def sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path):
+    eps_arr, _ = load_cheat_eps_from_csv(eps_file_path, num_imgs)
     user_logger.info("sort_img_correctly: loaded {}".format(eps_arr))
     sorted_eps_arr = sorted(eps_arr, key=lambda eps: eps[1])
     user_logger.info("sort_img_correctly: sorted epsilons {}".format(sorted_eps_arr))
@@ -1762,9 +1759,9 @@ def sort_img_correctly(indexed_imgs_list):
 def sort_img_by_confidence(indexed_imgs_list):
     return sorted(indexed_imgs_list, key=lambda img: score_func(img.image))
 
-def sort_img_by_score(indexed_imgs_list):
+def sort_img_by_score(indexed_imgs_list, num_imgs, eps_file_path):
     if TEST:
-        return sort_img_correctly(indexed_imgs_list)
+        return sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path)
     return sort_img_by_confidence(indexed_imgs_list)
 
 
@@ -1772,12 +1769,57 @@ def create_indexed_img_list_from_dataset(imgs_list):
     return [Image(imgs_list[i], i) for i in range(len(imgs_list))]
 
 
-def rng_search_all_epsilons(imgs_list):
+def rng_search_all_epsilons(imgs_list, num_imgs, eps_file_path):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
-    sorted_imgs = sort_img_by_score(imgs)
+    sorted_imgs = sort_img_by_score(imgs, num_imgs, eps_file_path)
     epsilons, runs_num = get_all_eps_with_mistakes_control(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
+
+def run_and_check_range_sizes_X_labels(labels, sizes):
+    for label in labels:
+        run_and_check_range_sizes(label, sizes)
+def run_and_check_range_sizes(label, sizes):
+    for num_imgs in sizes:
+        run_and_check_one_iteration(num_imgs, label)
+
+def run_and_check_one_iteration(num_imgs, label):
+    eps_file_path = './cheat_sheet_round_label_{}_indx_0_to_{}_precision_{}.csv'.format(str(label), str(num_imgs), str(PRECISION))
+
+    start_time = time.time()
+    user_logger.info("######################## start logging ########################")
+    images = load_dataset('mnist')
+    images.create_dict_to_eran()
+    dataset = images.dict_to_eran
+    imgs_list = dataset[label][:num_imgs-1]
+
+    # create cheat sheet
+    create_cheat_sheet_csv(imgs_list, range(num_imgs-1), run_eran, eps_file_path)
+
+    naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(eps_file_path, num_imgs)
+
+    # new and pretty binary search
+    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons(imgs_list, num_imgs, eps_file_path)
+    end_time = time.time()
+    elapsed_time = (start_time-end_time)/60 #convert to minutes
+
+    user_logger.info('Execution time: {} minutes'. format(elapsed_time))
+    user_logger.info('Network: {network}, number of images: {img_num}, digit: {digit}'.format(network=config.netname, img_num=num_imgs, digit=label, ))
+    user_logger.info('Naive approach num of runs: {}'.format(naive_runs_num))
+    user_logger.info('Ranged binary search approach num of runs: {}'.format(rng_bin_srch_runs_num))
+    user_logger.info('rng_bin_srch_epsilons: {}'.format(rng_bin_srch_epsilons))
+    user_logger.info('naive_epsilons: {}'.format(naive_epsilons))
+    user_logger.info('List are identical: {}'.format(rng_bin_srch_epsilons == naive_epsilons))
+
+    rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(label) + '_indx_0_to_' + str(num_imgs) \
+               + '_precision_' + str(PRECISION) + '.csv'
+    save_epsilons_to_csv(rng_bin_srch_epsilons, rng_bin_srch_runs_num, rng_path)
+
+    runs_num_path = '/root/ERAN/tf_verify/outcomes.json'
+    save_runs_num(runs_num_path, naive_runs_num, method="naive", label=LABEL, num_of_images=num_imgs)
+    save_runs_num(runs_num_path, rng_bin_srch_runs_num, method="rng_bin_srch_by_confidence", label=LABEL, num_of_images=num_imgs)
+
+    user_logger.info("######################## end of logging ########################")
 
 def main():
     """
@@ -1787,45 +1829,16 @@ def main():
     num_of_classified -> number of pictures which were classified correctly
     :return:
     """
-
     parse_args()
 
-    start_time = time.time()
-    user_logger.info("######################## start logging ########################")
-    images = load_dataset('mnist')
-    images.create_dict_to_eran()
-    dataset = images.dict_to_eran
-    imgs_list = dataset[LABEL][:NUM_OF_IMAGES-1]
+    run_and_check_one_iteration(8, '0')
+    run_and_check_one_iteration(11, '2')
 
-    # create cheat sheet
-    create_cheat_sheet_csv(imgs_list, range(NUM_OF_IMAGES-1), run_eran, CHEAT_SHEET_FILE_NAME)
+    # sizes = [8 * (2 ** i) for i in range(8)]
+    # run_and_check_range_sizes('2', sizes)
+    # sizes = [8 * (2 ** i) for i in range(7)]
+    # labels = range(10)
+    # run_and_check_range_sizes_X_labels(labels, sizes)
 
-    naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(CHEAT_SHEET_FILE_NAME)
-
-    # new and pretty binary search
-    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons(imgs_list)
-    end_time = time.time()
-    elapsed_time = (start_time-end_time)/60 #convert to minutes
-
-    user_logger.info('Execution time: {} minutes'. format(elapsed_time))
-    user_logger.info('Network: {network}, number of images: {img_num}, digit: {digit}'.format(network=config.netname, img_num=NUM_OF_IMAGES, digit=LABEL, ))
-    user_logger.info('Naive approach num of runs: {}'.format(naive_runs_num))
-    user_logger.info('Ranged binary search approach num of runs: {}'.format(rng_bin_srch_runs_num))
-    user_logger.info('rng_bin_srch_epsilons: {}'.format(rng_bin_srch_epsilons))
-    user_logger.info('naive_epsilons: {}'.format(naive_epsilons))
-    user_logger.info('List are identical: {}'.format(rng_bin_srch_epsilons == naive_epsilons))
-
-    rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(LABEL) + '_indx_0_to_' + str(NUM_OF_IMAGES) \
-               + '_precision_' + str(PRECISION) + '.csv'
-    save_epsilons_to_csv(rng_bin_srch_epsilons, rng_bin_srch_runs_num, rng_path)
-
-    runs_num_path = '/root/ERAN/tf_verify/outcomes.json'
-    save_runs_num(runs_num_path, naive_runs_num, method="naive")
-    save_runs_num(runs_num_path, rng_bin_srch_runs_num, method="rng_bin_srch_by_confidence")
-
-    user_logger.info("######################## end of logging ########################")
-
-
-
-
-main()
+if __name__ == "__main__":
+    main()

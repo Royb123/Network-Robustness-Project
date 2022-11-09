@@ -1736,10 +1736,8 @@ def save_runs_num(runs_num_file, runs_num, method, label, num_of_images, network
     with open(runs_num_file, "r") as f:
         runs_num_dict = json.load(f)
 
-    print("check this {}.{}.{}.{}.{}".format(method, network, label, num_of_images, precision))
-    user_logger.info("check this {}.{}.{}.{}.{}".format(method, network, label, num_of_images, precision))
-    print(os.path.basename(network))
-    key = (method, os.path.basename(network), label, num_of_images, precision)
+    # using json.dumps(key) only for using jsom.dump on dictionery with key as key
+    key = json.dumps((method, os.path.basename(network), label, num_of_images, precision))
 
     if key in runs_num_dict:
         if runs_num not in runs_num_dict[key]:

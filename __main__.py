@@ -53,6 +53,7 @@ from operator import itemgetter
 import re
 import time
 import json
+import traceback
 
 ########################### This is Dana's functions ###########################
 if True:
@@ -1849,4 +1850,8 @@ def main():
     run_and_check_range_sizes_X_labels(labels, sizes)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        exc_line = traceback.format_exc()
+        user_logger.error(exc_line)

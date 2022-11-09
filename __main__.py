@@ -1349,8 +1349,6 @@ PRECISION = 4
 TEST = False
 LOGGER_PATH = r"/root/logging/user_logger"
 
-CHEAT_SHEET_FILE_NAME = './cheat_sheet_round_label_' + str(LABEL) + '_indx_' + str(START_INDEX) \
-                        + '_to_' + str(START_INDEX + NUM_OF_IMAGES) +'_precision_' + str(PRECISION) + '.csv'
 
 dataset_labels_setup = {
         'mnist': ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
@@ -1641,7 +1639,7 @@ def save_single_img_csv(new_file_name, data_to_save):
         writer.writerow(data_to_save)
 
 
-def run_eran_in_cmd(epsilon, image):
+def run_eran_in_cmd(epsilon, image, LABEL=0):
     """
         this runs ERAN using the cmd. in order to do so, need to open a new folder for this specific run,
         the function saves specific image with label at the start, in the folder data, name mnist.test.csv, from which eran then takes
@@ -1816,8 +1814,8 @@ def run_and_check_one_iteration(num_imgs, label):
     save_epsilons_to_csv(rng_bin_srch_epsilons, rng_bin_srch_runs_num, rng_path)
 
     runs_num_path = '/root/ERAN/tf_verify/outcomes.json'
-    save_runs_num(runs_num_path, naive_runs_num, method="naive", label=LABEL, num_of_images=num_imgs)
-    save_runs_num(runs_num_path, rng_bin_srch_runs_num, method="rng_bin_srch_by_confidence", label=LABEL, num_of_images=num_imgs)
+    save_runs_num(runs_num_path, naive_runs_num, method="naive", label=label, num_of_images=num_imgs)
+    save_runs_num(runs_num_path, rng_bin_srch_runs_num, method="rng_bin_srch_by_confidence", label=label, num_of_images=num_imgs)
 
     user_logger.info("######################## end of logging ########################")
 

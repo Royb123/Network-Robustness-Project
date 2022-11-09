@@ -1745,6 +1745,9 @@ def save_runs_num(runs_num_file, runs_num, method, label, num_of_images, network
     else:
         runs_num_dict[key] = [runs_num]
 
+    with open(runs_num_file, "w") as f:
+        json.dump(runs_num_dict, f)
+
 def sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path):
     eps_arr, _ = load_cheat_eps_from_csv(eps_file_path, num_imgs)
     user_logger.info("sort_img_correctly: loaded {}".format(eps_arr))

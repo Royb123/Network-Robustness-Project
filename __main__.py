@@ -1834,12 +1834,16 @@ def main():
     """
     parse_args()
 
-    run_and_check_one_iteration(2, '0')
-    run_and_check_one_iteration(8, '0')
-    run_and_check_one_iteration(11, '2')
+    # run_and_check_one_iteration(2, '0')
+    # run_and_check_one_iteration(8, '0')
+    # run_and_check_one_iteration(11, '2')
 
     # sizes = [8 * (2 ** i) for i in range(8)]
     # run_and_check_range_sizes('2', sizes)
+    sizes = [8 * (2 ** i) for i in range(2)]
+    labels = [2,3]
+    run_and_check_range_sizes_X_labels(labels, sizes)
+
     # sizes = [8 * (2 ** i) for i in range(7)]
     # labels = range(10)
     # run_and_check_range_sizes_X_labels(labels, sizes)

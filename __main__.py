@@ -1835,7 +1835,9 @@ def main():
     """
     parse_args()
 
-    run_and_check_one_iteration(128,'0')
+    run_and_check_one_iteration(256,'0')
+    run_and_check_one_iteration(512,'0')
+
     # run_and_check_one_iteration(8, '0')
     # run_and_check_one_iteration(11, '2')
 

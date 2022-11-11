@@ -1350,7 +1350,7 @@ MAX_EPS = 0.05
 MIN_EPS = 0
 
 PRECISION = 4
-USE_SUBPROCESS_AND_WAIT = False
+USE_SUBPROCESS_AND_WAIT = True
 TEST = False
 LOGGER_PATH = r"/root/logging/user_logger"
 

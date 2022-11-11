@@ -1837,8 +1837,8 @@ def main():
     """
     parse_args()
 
-    run_and_check_one_iteration(256,'0')
-    run_and_check_one_iteration(512,'0')
+    # run_and_check_one_iteration(256,'0')
+    # run_and_check_one_iteration(512,'0')
 
     # run_and_check_one_iteration(8, '0')
     # run_and_check_one_iteration(11, '2')
@@ -1849,9 +1849,9 @@ def main():
     # labels = [2,3]
     # run_and_check_range_sizes_X_labels(labels, sizes)
 
-    # sizes = [8 * (2 ** i) for i in range(7)]
-    # labels = range(10)
-    # run_and_check_range_sizes_X_labels(labels, sizes)
+    sizes = [8 * (2 ** i) for i in range(7)]
+    labels = range(10)
+    run_and_check_range_sizes_X_labels(labels, sizes)
 
 if __name__ == "__main__":
     try:

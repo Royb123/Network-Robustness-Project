@@ -1350,7 +1350,7 @@ MAX_EPS = 0.05
 MIN_EPS = 0
 
 PRECISION = 4
-USE_SUBPROCESS_AND_WAIT = False
+USE_SUBPROCESS_AND_WAIT = True
 TEST = False
 LOGGER_PATH = r"/root/logging/user_logger"
 
@@ -1851,10 +1851,10 @@ def main():
     parse_args()
 
     # run_and_check_one_iteration(256,'0')
-    run_and_check_one_iteration(512,'0')
-
-    run_and_check_one_iteration(512, '2')
-    run_and_check_one_iteration(1024, '2')
+    # run_and_check_one_iteration(512,'0')
+    #
+    # run_and_check_one_iteration(512, '2')
+    # run_and_check_one_iteration(1024, '2')
 
     # sizes = [8 * (2 ** i) for i in range(8)]
     # run_and_check_range_sizes('2', sizes)
@@ -1862,9 +1862,10 @@ def main():
     # labels = [2,3]
     # run_and_check_range_sizes_X_labels(labels, sizes)
 
-    # sizes = [8 * (2 ** i) for i in range(7)]
-    # labels = range(10)
-    # run_and_check_range_sizes_X_labels(labels, sizes)
+    sizes = [8 * (2 ** i) for i in range(7)]
+    labels = range(10)
+    run_and_check_range_sizes_X_labels(labels, sizes)
+    run_and_check_one_iteration(1024, '2')
 
 if __name__ == "__main__":
     try:

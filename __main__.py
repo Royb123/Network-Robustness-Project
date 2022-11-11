@@ -359,7 +359,7 @@ if True:
         config.json = vars(args)
 
 
-    def main_run_eran(img_input, input_epsilon):
+    def main_run_eran(img_input, input_epsilon, queue=None):
         confidence_arrays=[]
 
         if config.specnumber and not config.input_box and not config.output_constraints:
@@ -1328,6 +1328,8 @@ if True:
 
             print('analysis precision ',verified_images,'/ ', correctly_classified_images)
 
+            if queue:
+                queue.put((confidence_arrays,epsilon,verified_images,correctly_classified_images))
             return confidence_arrays,epsilon,verified_images,correctly_classified_images
 ########################### End of Dana's functions ############################
 
@@ -1348,6 +1350,7 @@ MAX_EPS = 0.05
 MIN_EPS = 0
 
 PRECISION = 4
+USE_SUBPROCESS_AND_WAIT = True
 TEST = False
 LOGGER_PATH = r"/root/logging/user_logger"
 
@@ -1376,7 +1379,17 @@ def enable_print():
 def run_eran(img_input, input_epsilon, supress_print=False):
     if supress_print:
         block_print()
-    ret = main_run_eran(img_input, input_epsilon)
+
+    if USE_SUBPROCESS_AND_WAIT:
+        q = Queue()
+        p = Process(target=main_run_eran, args=(img_input, input_epsilon, q))
+        p.start()
+        p.join()
+        ret = q.get()
+
+    else:
+        ret = main_run_eran(img_input, input_epsilon)
+
     if supress_print:
         enable_print()
 

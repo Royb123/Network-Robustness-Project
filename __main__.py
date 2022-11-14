@@ -1855,7 +1855,7 @@ def main():
     # run_and_check_one_iteration(512,'0')
 
     run_and_check_one_iteration(512, '2')
-    run_and_check_one_iteration(1024, '2')
+    # run_and_check_one_iteration(1024, '2')
 
     # sizes = [8 * (2 ** i) for i in range(8)]
     # run_and_check_range_sizes('2', sizes)

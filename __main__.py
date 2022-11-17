@@ -17,6 +17,8 @@
 
 import sys
 import os
+from eran_runner import main_run_eran
+
 cpu_affinity = os.sched_getaffinity(0)
 sys.path.insert(0, '../ELINA/python_interface/')
 sys.path.insert(0, '../deepg/code/')
@@ -24,7 +26,6 @@ import numpy as np
 from eran import ERAN
 from read_net_file import *
 
-from .eran_runner import main_run_eran
 
 from ai_milp import *
 import argparse

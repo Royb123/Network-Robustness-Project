@@ -23,7 +23,9 @@ sys.path.insert(0, '../deepg/code/')
 import numpy as np
 from eran import ERAN
 from read_net_file import *
-from eran_runner import main_run_eran
+
+from .eran_runner import main_run_eran
+
 from ai_milp import *
 import argparse
 from config import config

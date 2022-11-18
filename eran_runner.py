@@ -27,7 +27,6 @@ from read_zonotope_file import read_zonotope
 import tensorflow as tf
 from tqdm import tqdm
 from ai_milp import *
-import argparse
 from config import config
 from constraint_utils import *
 import itertools

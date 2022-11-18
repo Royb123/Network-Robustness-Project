@@ -22,13 +22,9 @@ cpu_affinity = os.sched_getaffinity(0)
 sys.path.insert(0, '../ELINA/python_interface/')
 sys.path.insert(0, '../deepg/code/')
 
-from read_net_file import *
 
-
-from ai_milp import *
 import argparse
 from config import config
-from constraint_utils import *
 
 import logging
 
@@ -634,7 +630,7 @@ def main():
     # run_and_check_one_iteration(256,'0')
     # run_and_check_one_iteration(512,'0')
 
-    run_and_check_one_iteration(5, '2')
+    run_and_check_one_iteration(6, '2')
     # run_and_check_one_iteration(1024, '2')
 
     # sizes = [8 * (2 ** i) for i in range(8)]

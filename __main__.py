@@ -311,7 +311,7 @@ def eran_dummy_func(mid, i):
         return 0
 
 
-def score_func(img, epsilon=MIN_EPS):
+def confidence_score_func(img, epsilon=MIN_EPS):
     labels_confidence = run_eran([img], epsilon)[0][0]
     two_highest_conf_lbl = heapq.nlargest(2, labels_confidence)
     return abs(two_highest_conf_lbl[0] - two_highest_conf_lbl[1])
@@ -550,22 +550,19 @@ def sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path):
     user_logger.info("sort_img_correctly: sorted imgs {}".format([img.index for img in sorted_imgs]))
     return sorted_imgs
 
-def sort_img_by_confidence(indexed_imgs_list):
-    return sorted(indexed_imgs_list, key=lambda img: score_func(img.image))
-
-def sort_img_by_score(indexed_imgs_list, num_imgs, eps_file_path):
+def sort_img_by_score(indexed_imgs_list, num_imgs, eps_file_path, score_func=confidence_score_func):
     if TEST:
         return sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path)
-    return sort_img_by_confidence(indexed_imgs_list)
+    return sorted(indexed_imgs_list, key=lambda img: score_func(img.image))
 
 
 def create_indexed_img_list_from_dataset(imgs_list):
     return [Image(imgs_list[i], i) for i in range(len(imgs_list))]
 
 
-def rng_search_all_epsilons(imgs_list, num_imgs, eps_file_path):
+def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, eps_file_path, score_func=confidence_score_func):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
-    sorted_imgs = sort_img_by_score(imgs, num_imgs, eps_file_path)
+    sorted_imgs = sort_img_by_score(imgs, num_imgs, eps_file_path, score_func=score_func)
     epsilons, runs_num = get_all_eps_with_mistakes_control(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
@@ -600,7 +597,7 @@ def run_and_check_one_iteration(num_imgs, label):
     naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(eps_file_path, num_imgs)
 
     # new and pretty binary search
-    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons(imgs_list, num_imgs, eps_file_path)
+    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, eps_file_path)
     end_time = time.time()
     elapsed_time = (start_time-end_time)/60 #convert to minutes
 

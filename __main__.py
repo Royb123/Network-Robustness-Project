@@ -18,17 +18,11 @@
 import sys
 import os
 
-cpu_affinity = os.sched_getaffinity(0)
-sys.path.insert(0, '../ELINA/python_interface/')
-sys.path.insert(0, '../deepg/code/')
-
-
 import argparse
 from config import config
 
 import logging
 
-sys.path.insert(0, '/root/load_dataset')
 import keras
 import numpy as np
 import matplotlib.pyplot as plt

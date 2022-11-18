@@ -22,8 +22,7 @@ from eran_runner import main_run_eran
 cpu_affinity = os.sched_getaffinity(0)
 sys.path.insert(0, '../ELINA/python_interface/')
 sys.path.insert(0, '../deepg/code/')
-import numpy as np
-from eran import ERAN
+
 from read_net_file import *
 
 
@@ -31,24 +30,16 @@ from ai_milp import *
 import argparse
 from config import config
 from constraint_utils import *
-import re
-import itertools
-from multiprocessing import Pool, Value
-import onnxruntime.backend as rt
+
 import logging
-import torch
-import spatial
-from copy import deepcopy
-import matplotlib.pyplot as plt
+
 sys.path.insert(0, '/root/load_dataset')
 import keras
 import numpy as np
 import matplotlib.pyplot as plt
-import random
 import csv
 import subprocess
 import heapq
-from operator import itemgetter
 import re
 import time
 import json

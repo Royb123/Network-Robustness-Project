@@ -628,14 +628,15 @@ def main():
     # run_and_check_one_iteration(256,'0')
     # run_and_check_one_iteration(512,'0')
 
-    run_and_check_one_iteration(6, '2')
+    # run_and_check_one_iteration(6, '2')
     # run_and_check_one_iteration(1024, '2')
 
     # sizes = [8 * (2 ** i) for i in range(8)]
-    # run_and_check_range_sizes('2', sizes)
+    sizes = [13, 21, 34]
+    # run_and_check_range_sizes('3', sizes)
     # sizes = [8 * (2 ** i) for i in range(2)]
-    # labels = [2,3]
-    # run_and_check_range_sizes_X_labels(labels, sizes)
+    labels = [5,3]
+    run_and_check_range_sizes_X_labels(labels, sizes)
 
     # sizes = [8 * (2 ** i) for i in range(7)]
     # labels = range(10)

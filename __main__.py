@@ -155,7 +155,6 @@ def run_eran(img_input, input_epsilon, supress_print=False):
         p = Process(target=main_run_eran_wrapper, args=(img_input, input_epsilon, q))
         p.start()
         p.join()
-        p.close()
         ret = q.get()
 
     else:

@@ -47,6 +47,12 @@ import traceback
 from multiprocessing import Process, Queue
 
 
+def isnetworkfile(fname):
+    _, ext = os.path.splitext(fname)
+    if ext not in ['.pyt', '.meta', '.tf','.onnx', '.pb']:
+        raise argparse.ArgumentTypeError('only .pyt, .tf, .onnx, .pb, and .meta formats supported')
+    return fname
+
 def parse_args():
     parser = argparse.ArgumentParser(description='ERAN Example',  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--netname', type=isnetworkfile, default=config.netname, help='the network name, the extension can be only .pb, .pyt, .tf, .meta, and .onnx')

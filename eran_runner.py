@@ -33,17 +33,12 @@ from constraint_utils import *
 import itertools
 from multiprocessing import Pool, Value
 import onnxruntime.backend as rt
-import logging
 import torch
 import spatial
 from copy import deepcopy
 sys.path.insert(0, '/root/load_dataset')
-import keras
 import numpy as np
-import matplotlib.pyplot as plt
 import csv
-import subprocess
-import heapq
 import re
 import time
 
@@ -65,11 +60,6 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def isnetworkfile(fname):
-    _, ext = os.path.splitext(fname)
-    if ext not in ['.pyt', '.meta', '.tf','.onnx', '.pb']:
-        raise argparse.ArgumentTypeError('only .pyt, .tf, .onnx, .pb, and .meta formats supported')
-    return fname
 
 
 def parse_input_box(text):

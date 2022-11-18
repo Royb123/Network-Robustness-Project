@@ -637,11 +637,10 @@ def main():
     # run_and_check_range_sizes('3', sizes)
     # sizes = [8 * (2 ** i) for i in range(2)]
     labels = [5,3]
-    run_and_check_range_sizes_X_labels(labels, sizes)
+    run_and_check_range_sizes_X_labels(sizes, labels)
 
     # sizes = [8 * (2 ** i) for i in range(7)]
     # labels = range(10)
-    # run_and_check_range_sizes_X_labels(labels, sizes)
     # run_and_check_one_iteration(1024, '2')
 
 if __name__ == "__main__":

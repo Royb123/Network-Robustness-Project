@@ -155,6 +155,7 @@ def run_eran(img_input, input_epsilon, supress_print=False):
         p = Process(target=main_run_eran_wrapper, args=(img_input, input_epsilon, q))
         p.start()
         p.join()
+        p.close()
         ret = q.get()
 
     else:
@@ -633,10 +634,10 @@ def main():
     # run_and_check_one_iteration(1024, '2')
 
     # sizes = [8 * (2 ** i) for i in range(8)]
-    sizes = [13, 21, 34]
+    sizes = [1024,]
     # run_and_check_range_sizes('3', sizes)
     # sizes = [8 * (2 ** i) for i in range(2)]
-    labels = [5,3]
+    labels = [2,]
     run_and_check_range_sizes_X_labels(sizes, labels)
 
     # sizes = [8 * (2 ** i) for i in range(7)]

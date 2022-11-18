@@ -627,7 +627,7 @@ def main():
     # run_and_check_one_iteration(256,'0')
     # run_and_check_one_iteration(512,'0')
 
-    run_and_check_one_iteration(10, '2')
+    run_and_check_one_iteration(5, '2')
     # run_and_check_one_iteration(1024, '2')
 
     # sizes = [8 * (2 ** i) for i in range(8)]

@@ -33,7 +33,7 @@ import re
 import time
 import json
 import traceback
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Pool
 
 
 
@@ -568,10 +568,14 @@ def run_and_check_range_sizes_X_labels(labels, sizes):
     for label in labels:
         run_and_check_range_sizes(label, sizes)
 def run_and_check_range_sizes(label, sizes):
-    for num_imgs in sizes:
-        # p = Process(target=run_and_check_one_iteration, args=(num_imgs, str(label)))
-        # p.start()
-        run_and_check_one_iteration(num_imgs, str(label))
+    with Pool(5) as p:
+        p.map(run_and_check_one_iteration, map(lambda x: (x, str(label)), sizes))
+
+    # for num_imgs in sizes:
+    #
+    #     p = Process(target=run_and_check_one_iteration, args=(num_imgs, str(label)))
+    #     p.start()
+    #     run_and_check_one_iteration(num_imgs, str(label))
 
 def run_and_check_one_iteration(num_imgs, label):
     eps_file_path = './cheat_sheet_round_label_{}_indx_0_to_{}_precision_{}.csv'.format(str(label), str(num_imgs), str(PRECISION))

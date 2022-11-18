@@ -565,8 +565,9 @@ def rng_search_all_epsilons(imgs_list, num_imgs, eps_file_path):
     return sorted_epsilons, runs_num
 
 def run_and_check_range_sizes_X_labels(labels, sizes):
+    str_labels = [str(label) for label in labels]
     with Pool(10) as p:
-        p.starmap(run_and_check_one_iteration, product(sizes, labels))
+        p.starmap(run_and_check_one_iteration, product(sizes, str_labels))
 
 def run_and_check_one_iteration(num_imgs, label):
     eps_file_path = './cheat_sheet_round_label_{}_indx_0_to_{}_precision_{}.csv'.format(str(label), str(num_imgs), str(PRECISION))

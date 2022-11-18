@@ -17,7 +17,6 @@
 
 import sys
 import os
-from eran_runner import main_run_eran
 
 cpu_affinity = os.sched_getaffinity(0)
 sys.path.insert(0, '../ELINA/python_interface/')
@@ -46,6 +45,30 @@ import json
 import traceback
 from multiprocessing import Process, Queue
 
+
+
+EPS_IS_LOWER = -1
+EPS_IS_HIGHER = -2
+EPS_UNDEFINED = -3
+IMG_UNRECOGNIZABLE = -4
+
+MAX_EPS = 0.05
+MIN_EPS = 0
+
+PRECISION = 4
+USE_SUBPROCESS_AND_WAIT = False
+TEST = False
+LOGGER_PATH = r"/root/logging/user_logger"
+
+dataset_labels_setup = {
+        'mnist': ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
+        'cifar': ('airplanes', 'cars', 'birds', 'cats', 'deer', 'dogs', 'frogs', 'horses', 'ships', 'trucks')
+    }
+
+dataset_test_labels_setup_func = {
+        'mnist': lambda tl, i: tl[i],
+        'cifar': lambda tl, i: tl[i][0]
+    }
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -114,31 +137,6 @@ def parse_args():
 
 
 
-EPS_IS_LOWER = -1
-EPS_IS_HIGHER = -2
-EPS_UNDEFINED = -3
-IMG_UNRECOGNIZABLE = -4
-
-MAX_EPS = 0.05
-MIN_EPS = 0
-
-PRECISION = 4
-USE_SUBPROCESS_AND_WAIT = False
-TEST = False
-LOGGER_PATH = r"/root/logging/user_logger"
-
-
-dataset_labels_setup = {
-        'mnist': ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
-        'cifar': ('airplanes', 'cars', 'birds', 'cats', 'deer', 'dogs', 'frogs', 'horses', 'ships', 'trucks')
-    }
-
-dataset_test_labels_setup_func = {
-        'mnist': lambda tl, i: tl[i],
-        'cifar': lambda tl, i: tl[i][0]
-    }
-
-
 def block_print():
     sys.stdout = open(os.devnull, 'w')
     sys.stderr = open(os.devnull, 'w')
@@ -149,19 +147,28 @@ def enable_print():
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
 
+def main_run_eran_wrapper(img_input, input_epsilon, queue=None):
+    from eran_runner import main_run_eran
+
+    ret = main_run_eran(img_input, input_epsilon)
+    if queue:
+        queue.put(ret)
+
+    return ret
+
 def run_eran(img_input, input_epsilon, supress_print=False):
     if supress_print:
         block_print()
 
     if USE_SUBPROCESS_AND_WAIT:
         q = Queue()
-        p = Process(target=main_run_eran, args=(img_input, input_epsilon, q))
+        p = Process(target=main_run_eran_wrapper, args=(img_input, input_epsilon, q))
         p.start()
         p.join()
         ret = q.get()
 
     else:
-        ret = main_run_eran(img_input, input_epsilon)
+        ret = main_run_eran_wrapper(img_input, input_epsilon)
 
     if supress_print:
         enable_print()

@@ -279,7 +279,7 @@ def init_domain(d):
     else:
         return d
 
-def main_run_eran(img_input, input_epsilon, queue=None):
+def main_run_eran(img_input, input_epsilon):
     confidence_arrays=[]
 
     if config.specnumber and not config.input_box and not config.output_constraints:
@@ -1248,6 +1248,4 @@ def main_run_eran(img_input, input_epsilon, queue=None):
 
         print('analysis precision ',verified_images,'/ ', correctly_classified_images)
 
-        if queue:
-            queue.put((confidence_arrays,epsilon,verified_images,correctly_classified_images))
         return confidence_arrays,epsilon,verified_images,correctly_classified_images

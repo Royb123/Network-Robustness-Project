@@ -466,10 +466,13 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
         mid_img = imgs[mid_indx]
         mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
         if mid_img_eps < MIN_EPS:
+            # Epsilon is out of iter-range (wrong lower-upper assumption).
             if mid_img_eps == EPS_IS_LOWER:
+                # Epsilon is smaller than lower bound
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, lower, is_in_range)
                 user_logger.warning("out of scope lower rng binary_search: ")
             elif mid_img_eps == EPS_IS_HIGHER:
+                # Epsilon is bigger than upper bound
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, upper, MAX_EPS, is_in_range)
                 user_logger.warning("out of scope rng upper binary_search: ")
             else:
@@ -478,16 +481,19 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
             num_of_runs += num_of_runs_after_mistake
 
             if mid_img_eps < MIN_EPS:
-                # epsilon is out of boundaries
+                # TODO check with new
+                # Epsilon is out of global boundaries
+                # Bad image
                 new_upper = upper
                 new_lower = lower
                 if mid_img_eps == EPS_IS_HIGHER:
-                    user_logger.error("GREAT EPSILON!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    user_logger.error("Epsilon > MAX !!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             else:
                 new_upper = max(upper, mid_img_eps)
                 new_lower = min(lower, mid_img_eps)
 
         else:
+            # Epsilon is in bounderies
             new_upper = new_lower = mid_img_eps
 
         lower_list = imgs[:mid_indx]

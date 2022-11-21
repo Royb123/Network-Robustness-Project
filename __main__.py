@@ -47,7 +47,7 @@ MIN_EPS = 0
 
 PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
-TEST = False
+TEST = True
 LOGGER_PATH = r"/root/logging/user_logger"
 
 dataset_labels_setup = {
@@ -640,7 +640,7 @@ def main():
     sizes = [1024,]
     # run_and_check_range_sizes('3', sizes)
     # sizes = [8 * (2 ** i) for i in range(2)]
-    labels = [2,]
+    labels = [5,]
     run_and_check_range_sizes_X_labels(sizes, labels)
 
     # sizes = [8 * (2 ** i) for i in range(7)]

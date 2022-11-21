@@ -582,11 +582,12 @@ def run_and_check_range_sizes_X_labels(sizes, labels):
 
 
 def run_and_check_one_iteration(num_imgs, label):
-    eps_file_path = './cheat_sheet_round_label_{}_indx_0_to_{}_precision_{}.csv'.format(str(label), str(num_imgs), str(PRECISION))
 
     start_time = time.time()
     user_logger.info("######################## start logging ########################")
-    images = load_dataset('mnist')
+    eps_file_path = './cheat_sheet_round_label_{}_indx_0_to_{}_precision_{}.csv'.format(str(label), str(num_imgs), str(PRECISION))
+
+    images = load_dataset('mnist') #TODO change using config.netname
     images.create_dict_to_eran()
     dataset = images.dict_to_eran
     imgs_list = dataset[label][:num_imgs-1]

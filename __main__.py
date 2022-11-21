@@ -640,7 +640,7 @@ def main():
     sizes = [1024,]
     # run_and_check_range_sizes('3', sizes)
     # sizes = [8 * (2 ** i) for i in range(2)]
-    labels = [4,]
+    labels = [7,]
     run_and_check_range_sizes_X_labels(sizes, labels)
 
     # sizes = [8 * (2 ** i) for i in range(7)]

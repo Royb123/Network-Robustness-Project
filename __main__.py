@@ -56,7 +56,7 @@ dataset_labels_setup = {
         'cifar': ('airplanes', 'cars', 'birds', 'cats', 'deer', 'dogs', 'frogs', 'horses', 'ships', 'trucks')
     }
 
-dataset_test_labels_setup_func = {
+dataset_labels_setup_func = {
         'mnist': lambda tl, i: tl[i],
         'cifar': lambda tl, i: tl[i][0]
     }
@@ -208,12 +208,12 @@ class Dataset(object):
         input is from class dataset, output is a dictionary, keys are according to labels
         """
         organized_images = dict.fromkeys(self.labels)
-        for i in range(len(self.test_labels)):
-            key = self.labels[dataset_test_labels_setup_func[self.name](self.test_labels, i)]
+        for i in range(len(self.train_labels)):
+            key = self.labels[dataset_labels_setup_func[self.name](self.train_labels, i)]
             if organized_images[key] is None:
-                organized_images[key] = [self.test_images[i]]
+                organized_images[key] = [self.train_images[i]]
             else:
-                organized_images[key] = np.append(organized_images[key], [self.test_images[i]], axis=0)
+                organized_images[key] = np.append(organized_images[key], [self.train_images[i]], axis=0)
         self.organized_images = organized_images
 
     def create_dict_to_eran(self):
@@ -668,23 +668,12 @@ def main():
     """
     parse_args()
 
-    # run_and_check_one_iteration(256,'0')
-    # run_and_check_one_iteration(512,'0')
+    run_and_check_range_sizes_X_labels([1024,], labels, methods)
 
-    # run_and_check_one_iteration(6, '2')
-    # run_and_check_one_iteration(1024, '2')
-
-    # sizes = [8 * (2 ** i) for i in range(8)]
     sizes = [8,]
-    # run_and_check_range_sizes('3', sizes)
-    # sizes = [8 * (2 ** i) for i in range(2)]
     labels = [1,]
     methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)
-
-    # sizes = [8 * (2 ** i) for i in range(7)]
-    # labels = range(10)
-    # run_and_check_one_iteration(1024, '2')
 
 if __name__ == "__main__":
     try:

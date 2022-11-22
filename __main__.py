@@ -585,7 +585,7 @@ def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, score_func, 
     rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons_sorted_by_score_func(imgs_list, size, score_func=score_func)
 
     user_logger.info('rng_binary {} # num of runs: {}'.format(name_for_log, rng_bin_srch_runs_num))
-    user_logger.info('rng_binary {} # rng_bin_epsilons: {}'.format(name_for_log, rng_bin_srch_epsilons))
+    user_logger.info('rng_binary {} # epsilons: {}'.format(name_for_log, rng_bin_srch_epsilons))
 
     rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score_{}.csv'.format(name_for_log)
     save_epsilons_to_csv(rng_bin_srch_epsilons, rng_bin_srch_runs_num, rng_path)
@@ -601,22 +601,22 @@ def check_epsilons_naive_img_one_by_one(imgs_list, size, name_for_log):
     naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(eps_file_path, size)
 
     user_logger.info('Naive {} # num of runs: {}'.format(name_for_log, naive_runs_num))
-    user_logger.info('naive {} # rng_bin_epsilons: {}'.format(name_for_log, naive_epsilons))
+    user_logger.info('naive {} # epsilons: {}'.format(name_for_log, naive_epsilons))
 
     save_runs_num(OUTCOMES_PATH, naive_runs_num, method="naive", label_and_size=name_for_log, network=config.netname)
 
     return naive_epsilons
-def check_epsilons_by_method_with_time(imgs_list, size, label, method):
+def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method):
     start_time = time.time()
 
     if method == "naive":
-        ret = check_epsilons_naive_img_one_by_one(imgs_list, size, "netname_{}_label_{}_size_{}".format(config.netname, str(label), str(size)))
+        ret = check_epsilons_naive_img_one_by_one(imgs_list, size, basename_for_log)
 
     elif method == "rng_binary_by_confidence":
-        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, confidence_score_func, "netname_{}_label_{}_size_{}_scored_confidence".format(config.netname, str(label), str(size)))
+        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, confidence_score_func, "{}_scored_confidence".format(basename_for_log))
 
     elif method == "rng_binary_by_random":
-        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, random_score_func, "netname_{}_label_{}_size_{}_scored_randomly".format(config.netname, str(label), str(size)))
+        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, random_score_func, "{}_scored_randomly".format(basename_for_log))
 
     # TODO add TEST (see sort_img_correctly)
 
@@ -628,7 +628,6 @@ def check_epsilons_by_method_with_time(imgs_list, size, label, method):
     elapsed_time = (start_time - end_time) / 60  # convert to minutes
 
     user_logger.info('Execution time: {} minutes'. format(elapsed_time))
-    user_logger.info('Network: {network}, number of images: {img_num}, digit: {digit}, methods'.format(network=config.netname, img_num=str(size), digit=str(label), ))
 
     return ret
 def check_epsilons_diversed_methods(num_imgs, label, methods):
@@ -641,8 +640,14 @@ def check_epsilons_diversed_methods(num_imgs, label, methods):
     imgs_list = dataset[label][:num_imgs-1]
     epsilons_list = []
 
+    basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label), str(num_imgs))
+
     for method in methods:
-        epsilons_list.append(check_epsilons_by_method_with_time(imgs_list, num_imgs, label, method))
+        epsilons_list.append(check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method))
+        user_logger.info(
+            'Network: {network}, number of images: {img_num}, digit: {digit}, methods'.format(network=config.netname,
+                                                                                              img_num=str(num_imgs),
+                                                                                              digit=str(label), ))
 
     if all([i == epsilons_list[0] for i in epsilons_list]):
         user_logger.info("epsilon lists are identical")

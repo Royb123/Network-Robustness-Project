@@ -13,8 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 """
-
-
+import random
 import sys
 import os
 
@@ -47,8 +46,10 @@ MIN_EPS = 0
 
 PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
-TEST = True
+TEST = False
 LOGGER_PATH = r"/root/logging/user_logger"
+OUTCOMES_PATH = '/root/ERAN/tf_verify/outcomes.json'
+
 
 dataset_labels_setup = {
         'mnist': ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9'),
@@ -311,11 +312,13 @@ def eran_dummy_func(mid, i):
         return 0
 
 
-def confidence_score_func(img, epsilon=MIN_EPS):
-    labels_confidence = run_eran([img], epsilon)[0][0]
+def confidence_score_func(img):
+    labels_confidence = run_eran([img], MIN_EPS)[0][0]
     two_highest_conf_lbl = heapq.nlargest(2, labels_confidence)
     return abs(two_highest_conf_lbl[0] - two_highest_conf_lbl[1])
 
+def random_score_func(img):
+    return random.random()
 
 def test_score_func(a, cheat_sheet):
 
@@ -522,14 +525,14 @@ def create_default_json_file(path):
     if not os.path.exists(path):
         with open(path, "w+") as f:
             json.dump({}, f)
-def save_runs_num(runs_num_file, runs_num, method, label, num_of_images, network, precision=PRECISION):
+def save_runs_num(runs_num_file, runs_num, method, label_and_size, network, precision=PRECISION):
     user_logger.info("pasten - {}".format(runs_num_file))
     create_default_json_file(runs_num_file)
     with open(runs_num_file, "r") as f:
         runs_num_dict = json.load(f)
 
     # using json.dumps(key) only for using jsom.dump on dictionery with key as key
-    key = json.dumps((method, os.path.basename(network), label, num_of_images, precision))
+    key = json.dumps((method, os.path.basename(network), label_and_size, precision))
 
     if key in runs_num_dict:
         if runs_num not in runs_num_dict[key]:
@@ -550,19 +553,13 @@ def sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path):
     user_logger.info("sort_img_correctly: sorted imgs {}".format([img.index for img in sorted_imgs]))
     return sorted_imgs
 
-def sort_img_by_score(indexed_imgs_list, num_imgs, eps_file_path, score_func=confidence_score_func):
-    if TEST:
-        return sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path)
-    return sorted(indexed_imgs_list, key=lambda img: score_func(img.image))
-
-
 def create_indexed_img_list_from_dataset(imgs_list):
     return [Image(imgs_list[i], i) for i in range(len(imgs_list))]
 
 
-def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, eps_file_path, score_func=confidence_score_func):
+def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, score_func=confidence_score_func):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
-    sorted_imgs = sort_img_by_score(imgs, num_imgs, eps_file_path, score_func=score_func)
+    sorted_imgs = sorted(imgs, key=lambda img: score_func(img.image))
     epsilons, runs_num = get_all_eps_with_mistakes_control(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
@@ -574,49 +571,88 @@ def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, eps_file_p
 #         p.starmap(run_and_check_one_iteration, product(sizes, str_labels))
 
 
-def run_and_check_range_sizes_X_labels(sizes, labels):
+def run_and_check_range_sizes_X_labels(sizes, labels, methods):
     str_labels = [str(label) for label in labels]
     for size, label in product(sizes, str_labels):
-        p = Process(target=run_and_check_one_iteration, args=(size, label))
+        p = Process(target=check_epsilons_diversed_methods, args=(size, label, methods))
         p.start()
 
+def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, score_func, name_for_log):
+    user_logger.info("start rng_binary {}".format(name_for_log))
 
-def run_and_check_one_iteration(num_imgs, label):
+    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons_sorted_by_score_func(imgs_list, size, score_func=score_func)
 
+    user_logger.info('rng_binary {} # num of runs: {}'.format(name_for_log, rng_bin_srch_runs_num))
+    user_logger.info('rng_binary {} # rng_bin_epsilons: {}'.format(name_for_log, rng_bin_srch_epsilons))
+
+    rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score_{}.csv'.format(name_for_log)
+    save_epsilons_to_csv(rng_bin_srch_epsilons, rng_bin_srch_runs_num, rng_path)
+    save_runs_num(OUTCOMES_PATH, rng_bin_srch_runs_num, method="rng_bin_{}".format(score_func.__name__), label_and_size=name_for_log, network=config.netname)
+
+    return rng_bin_srch_epsilons
+def check_epsilons_naive_img_one_by_one(imgs_list, size, name_for_log):
+    user_logger.info("start naive {}".format(name_for_log))
+
+    eps_file_path = './cheat_sheet_round_{}.csv'.format(name_for_log)
+
+    create_cheat_sheet_csv(imgs_list, range(size-1), run_eran, eps_file_path)
+    naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(eps_file_path, size)
+
+    user_logger.info('Naive {} # num of runs: {}'.format(name_for_log, naive_runs_num))
+    user_logger.info('naive {} # rng_bin_epsilons: {}'.format(name_for_log, naive_epsilons))
+
+    save_runs_num(OUTCOMES_PATH, naive_runs_num, method="naive", label_and_size=name_for_log, network=config.netname)
+
+    return naive_epsilons
+def check_epsilons_by_method_with_time(imgs_list, size, label, method):
     start_time = time.time()
+
+    if method == "naive":
+        ret = check_epsilons_naive_img_one_by_one(imgs_list, size, "label_{}_size_{}".format(str(label), str(size)))
+
+    elif method == "rng_binary_by_confidence":
+        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, confidence_score_func, "label_{}_size_{}_scored_confidence".format(str(label), str(size)))
+
+    elif method == "rng_binary_by_random":
+        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, random_score_func, "label_{}_size_{}_scored_randomly".format(str(label), str(size)))
+
+    # TODO add TEST (see sort_img_correctly)
+
+    else:
+        raise Exception("unknown method")
+
+
+    end_time = time.time()
+    elapsed_time = (start_time - end_time) / 60  # convert to minutes
+
+    user_logger.info('Execution time: {} minutes'. format(elapsed_time))
+    user_logger.info('Network: {network}, number of images: {img_num}, digit: {digit}, methods'.format(network=config.netname, img_num=str(size), digit=str(label), ))
+
+    return ret
+def check_epsilons_diversed_methods(num_imgs, label, methods):
+
     user_logger.info("######################## start logging ########################")
-    eps_file_path = './cheat_sheet_round_label_{}_indx_0_to_{}_precision_{}.csv'.format(str(label), str(num_imgs), str(PRECISION))
 
     images = load_dataset('mnist') #TODO change using config.netname
     images.create_dict_to_eran()
     dataset = images.dict_to_eran
     imgs_list = dataset[label][:num_imgs-1]
+    epsilons_list = []
 
-    # create cheat sheet
-    create_cheat_sheet_csv(imgs_list, range(num_imgs-1), run_eran, eps_file_path)
+    for method in methods:
+        epsilons_list.append(check_epsilons_by_method_with_time(imgs_list, num_imgs, label, method))
 
-    naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(eps_file_path, num_imgs)
+    if all([i == epsilons_list[0] for i in epsilons_list]):
+        user_logger.info("epsilon lists are identical")
+    else:
+        user_logger.info("methods - {}".format(methods))
+        for epsilons in epsilons_list:
+            user_logger.info("epsilons - {}".format(epsilons))
+        user_logger.error('epsilon lists not identical')
 
-    # new and pretty binary search
-    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, eps_file_path)
-    end_time = time.time()
-    elapsed_time = (start_time-end_time)/60 #convert to minutes
+        raise Exception('epsilon lists not identical')
 
-    user_logger.info('Execution time: {} minutes'. format(elapsed_time))
-    user_logger.info('Network: {network}, number of images: {img_num}, digit: {digit}'.format(network=config.netname, img_num=num_imgs, digit=label, ))
-    user_logger.info('Naive approach num of runs: {}'.format(naive_runs_num))
-    user_logger.info('Ranged binary search approach num of runs: {}'.format(rng_bin_srch_runs_num))
-    user_logger.info('rng_bin_srch_epsilons: {}'.format(rng_bin_srch_epsilons))
-    user_logger.info('naive_epsilons: {}'.format(naive_epsilons))
-    user_logger.info('List are identical: {}'.format(rng_bin_srch_epsilons == naive_epsilons))
 
-    rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score' + str(label) + '_indx_0_to_' + str(num_imgs) \
-               + '_precision_' + str(PRECISION) + '.csv'
-    save_epsilons_to_csv(rng_bin_srch_epsilons, rng_bin_srch_runs_num, rng_path)
-
-    runs_num_path = '/root/ERAN/tf_verify/outcomes.json'
-    save_runs_num(runs_num_path, naive_runs_num, method="naive", label=label, num_of_images=num_imgs, network=config.netname)
-    save_runs_num(runs_num_path, rng_bin_srch_runs_num, method="rng_bin_srch_by_confidence", label=label, num_of_images=num_imgs, network=config.netname)
 
     user_logger.info("######################## end of logging ########################")
 
@@ -641,7 +677,8 @@ def main():
     # run_and_check_range_sizes('3', sizes)
     # sizes = [8 * (2 ** i) for i in range(2)]
     labels = [7,]
-    run_and_check_range_sizes_X_labels(sizes, labels)
+    methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods)
 
     # sizes = [8 * (2 ** i) for i in range(7)]
     # labels = range(10)

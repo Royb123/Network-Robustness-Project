@@ -459,6 +459,17 @@ def labels_confidence_using_eran_by_cmd(epsilon, image):
 
     return confidence_array
 
+def check_bad_image(eps):
+    if eps < MIN_EPS:
+        # Epsilon is out of global boundaries
+        if eps == EPS_IS_LOWER:
+            # Bad image
+            user_logger.info("epsilon = 0 - the network not assign this img")
+        elif eps == EPS_IS_HIGHER:
+            user_logger.error("Epsilon > MAX !!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        else:
+            user_logger.error("Somthing weird with this img")
+            raise Exception("Somthing weird with this img")
 
 def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
     user_logger.info("rng binary_search: ")
@@ -481,19 +492,10 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
             else:
                 raise Exception("Error: binary_search")
 
+            check_bad_image(mid_img_eps)
             num_of_runs += num_of_runs_after_mistake
-
-            if mid_img_eps < MIN_EPS:
-                # TODO check with new
-                # Epsilon is out of global boundaries
-                # Bad image
-                new_upper = upper
-                new_lower = lower
-                if mid_img_eps == EPS_IS_HIGHER:
-                    user_logger.error("Epsilon > MAX !!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            else:
-                new_upper = max(upper, mid_img_eps)
-                new_lower = min(lower, mid_img_eps)
+            new_upper = upper
+            new_lower = lower
 
         else:
             # Epsilon is in bounderies

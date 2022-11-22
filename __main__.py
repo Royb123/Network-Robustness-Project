@@ -668,10 +668,9 @@ def main():
     """
     parse_args()
 
-    run_and_check_range_sizes_X_labels([1024,], labels, methods)
 
-    sizes = [8,]
-    labels = [1,]
+    sizes = [10,]
+    labels = [3,]
     methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)
 

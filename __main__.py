@@ -673,10 +673,10 @@ def main():
     # run_and_check_one_iteration(1024, '2')
 
     # sizes = [8 * (2 ** i) for i in range(8)]
-    sizes = [1024,]
+    sizes = [8,]
     # run_and_check_range_sizes('3', sizes)
     # sizes = [8 * (2 ** i) for i in range(2)]
-    labels = [7,]
+    labels = [1,]
     methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)
 

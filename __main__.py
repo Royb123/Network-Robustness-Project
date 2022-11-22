@@ -610,13 +610,13 @@ def check_epsilons_by_method_with_time(imgs_list, size, label, method):
     start_time = time.time()
 
     if method == "naive":
-        ret = check_epsilons_naive_img_one_by_one(imgs_list, size, "label_{}_size_{}".format(str(label), str(size)))
+        ret = check_epsilons_naive_img_one_by_one(imgs_list, size, "netname_{}_label_{}_size_{}".format(config.netname, str(label), str(size)))
 
     elif method == "rng_binary_by_confidence":
-        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, confidence_score_func, "label_{}_size_{}_scored_confidence".format(str(label), str(size)))
+        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, confidence_score_func, "netname_{}_label_{}_size_{}_scored_confidence".format(config.netname, str(label), str(size)))
 
     elif method == "rng_binary_by_random":
-        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, random_score_func, "label_{}_size_{}_scored_randomly".format(str(label), str(size)))
+        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, random_score_func, "netname_{}_label_{}_size_{}_scored_randomly".format(config.netname, str(label), str(size)))
 
     # TODO add TEST (see sort_img_correctly)
 
@@ -669,7 +669,7 @@ def main():
     parse_args()
 
 
-    sizes = [10,]
+    sizes = [4,]
     labels = [3,]
     methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)

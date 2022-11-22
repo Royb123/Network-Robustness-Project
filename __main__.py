@@ -674,10 +674,17 @@ def main():
     parse_args()
 
 
-    sizes = [4,]
-    labels = [3,]
+    sizes = [8 * (2 ** i) for i in range(8)] + [4096]
+    labels = [2,9]
+    methods = ["naive", "rng_binary_by_confidence"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods)
+
+    sizes = [2048,]
+    labels = range(10)
     methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)
+
+
 
 if __name__ == "__main__":
     try:

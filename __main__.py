@@ -682,11 +682,15 @@ def main():
     # run_and_check_range_sizes_X_labels(sizes, labels, methods)
 
     sizes = [1024]
-    labels = [2]
-    methods = ["naive", "rng_binary_by_confidence"] #, "rng_binary_by_random"]
+    labels = [2,]
+    methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)
 
-
+    time.sleep(60 * 60 * 5)
+    sizes = [900,]
+    labels = range(10)
+    methods = ["naive", "rng_binary_by_confidence"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods)
 
 if __name__ == "__main__":
     try:

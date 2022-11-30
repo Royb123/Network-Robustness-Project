@@ -44,6 +44,7 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
+VERSION = 2.0
 PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
 TEST = False
@@ -535,7 +536,7 @@ def save_runs_num(runs_num_file, runs_num, method, label_and_size, network, prec
         runs_num_dict = json.load(f)
 
     # using json.dumps(key) only for using jsom.dump on dictionery with key as key
-    key = json.dumps((method, os.path.basename(network), label_and_size, precision))
+    key = json.dumps((method, os.path.basename(network), label_and_size, precision, VERSION))
 
     if key in runs_num_dict:
         if runs_num not in runs_num_dict[key]:

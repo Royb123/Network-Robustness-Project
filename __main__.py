@@ -208,12 +208,12 @@ class Dataset(object):
         input is from class dataset, output is a dictionary, keys are according to labels
         """
         organized_images = dict.fromkeys(self.labels)
-        for i in range(len(self.train_labels)):
-            key = self.labels[dataset_labels_setup_func[self.name](self.train_labels, i)]
+        for i in range(len(self.test_labels)):
+            key = self.labels[dataset_labels_setup_func[self.name](self.test_labels, i)]
             if organized_images[key] is None:
-                organized_images[key] = [self.train_images[i]]
+                organized_images[key] = [self.test_images[i]]
             else:
-                organized_images[key] = np.append(organized_images[key], [self.train_images[i]], axis=0)
+                organized_images[key] = np.append(organized_images[key], [self.test_images[i]], axis=0)
         self.organized_images = organized_images
 
     def create_dict_to_eran(self):
@@ -464,12 +464,12 @@ def check_bad_image(eps):
         # Epsilon is out of global boundaries
         if eps == EPS_IS_LOWER:
             # Bad image
-            user_logger.info("epsilon = 0 - the network not assign this img")
+            user_logger.info("epsilon = 0 - the network does not classify this img")
         elif eps == EPS_IS_HIGHER:
             user_logger.error("Epsilon > MAX !!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         else:
-            user_logger.error("Somthing weird with this img")
-            raise Exception("Somthing weird with this img")
+            user_logger.error("Something weird with this img")
+            raise Exception("Something weird with this img")
 
 def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
     user_logger.info("rng binary_search: ")
@@ -483,7 +483,8 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
             # Epsilon is out of iter-range (wrong lower-upper assumption).
             if mid_img_eps == EPS_IS_LOWER:
                 # Epsilon is smaller than lower bound
-                mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, lower, is_in_range)
+                if lower != MIN_EPS:
+                    mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, lower, is_in_range)
                 user_logger.warning("out of scope lower rng binary_search: ")
             elif mid_img_eps == EPS_IS_HIGHER:
                 # Epsilon is bigger than upper bound
@@ -674,15 +675,15 @@ def main():
     parse_args()
 
 
-    sizes = [8 * (2 ** i) for i in range(4,8)] + [4096]
-    labels = [2,9]
-    methods = ["naive", "rng_binary_by_confidence"]
-    run_and_check_range_sizes_X_labels(sizes, labels, methods)
-
-    # sizes = [2048,]
-    # labels = range(10)
-    # methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
+    # sizes = [8 * (2 ** i) for i in range(4,8)] + [4096]
+    # labels = [2,9]
+    # methods = ["naive", "rng_binary_by_confidence"]
     # run_and_check_range_sizes_X_labels(sizes, labels, methods)
+
+    sizes = [1024]
+    labels = [2]
+    methods = ["naive", "rng_binary_by_confidence"] #, "rng_binary_by_random"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods)
 
 
 

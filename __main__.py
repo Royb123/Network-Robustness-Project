@@ -486,6 +486,8 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
                 # Epsilon is smaller than lower bound
                 if lower != MIN_EPS:
                     mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, lower, is_in_range)
+                else:
+                    num_of_runs_after_mistake = 0
                 user_logger.warning("out of scope lower rng binary_search: ")
             elif mid_img_eps == EPS_IS_HIGHER:
                 # Epsilon is bigger than upper bound

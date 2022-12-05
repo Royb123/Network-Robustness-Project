@@ -44,7 +44,7 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-VERSION = 2.0
+VERSION = "restart_range_after_mistake"
 PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
 TEST = False
@@ -472,34 +472,43 @@ def check_bad_image(eps):
             user_logger.error("Something weird with this img")
             raise Exception("Something weird with this img")
 
+def epsilon_out_of_iter_range(img_eps, img, lower, upper, is_in_range):
+    if img_eps == EPS_IS_LOWER:
+        # Epsilon is smaller than lower bound
+        img_eps, num_of_runs_after_mistake = binary_search(img.image, MIN_EPS, lower, is_in_range)
+        user_logger.warning("out of scope lower rng binary_search: ")
+    elif img_eps == EPS_IS_HIGHER:
+        # Epsilon is bigger than upper bound
+        img_eps, num_of_runs_after_mistake = binary_search(img.image, upper, MAX_EPS, is_in_range)
+        user_logger.warning("out of scope rng upper binary_search: ")
+    else:
+        raise Exception("Error: binary_search")
+
+    check_bad_image(img_eps)
+    return num_of_runs_after_mistake, lower, upper, img_eps
+
+def epsilon_out_of_iter_restart(img, is_in_range):
+    img_eps, num_of_runs_after_mistake = binary_search(img.image, MIN_EPS, MAX_EPS, is_in_range)
+    check_bad_image(img_eps)
+
+    return num_of_runs_after_mistake, MIN_EPS, MAX_EPS, img_eps
+
+
 def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
     user_logger.info("rng binary_search: ")
 
     if imgs:
         mid_indx = round(len(imgs)/2)
-
         mid_img = imgs[mid_indx]
         mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
-        if mid_img_eps < MIN_EPS:
-            # Epsilon is out of iter-range (wrong lower-upper assumption).
-            if mid_img_eps == EPS_IS_LOWER:
-                # Epsilon is smaller than lower bound
-                if lower != MIN_EPS:
-                    mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, lower, is_in_range)
-                else:
-                    num_of_runs_after_mistake = 0
-                user_logger.warning("out of scope lower rng binary_search: ")
-            elif mid_img_eps == EPS_IS_HIGHER:
-                # Epsilon is bigger than upper bound
-                mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, upper, MAX_EPS, is_in_range)
-                user_logger.warning("out of scope rng upper binary_search: ")
-            else:
-                raise Exception("Error: binary_search")
 
-            check_bad_image(mid_img_eps)
-            num_of_runs += num_of_runs_after_mistake
-            new_upper = upper
-            new_lower = lower
+        if mid_img_eps < MIN_EPS:
+            if not (mid_img_eps == EPS_IS_LOWER and lower == MIN_EPS):
+                # otherwise the image is bad image
+
+                # num_of_runs_after_mistake, new_lower ,new_upper, mid_img_eps = epsilon_out_of_iter_range(mid_img_eps, mid_img, lower, upper, is_in_range)
+                num_of_runs_after_mistake, new_lower ,new_upper, mid_img_eps = epsilon_out_of_iter_restart(mid_img, is_in_range)
+                num_of_runs += num_of_runs_after_mistake
 
         else:
             # Epsilon is in bounderies
@@ -531,6 +540,7 @@ def create_default_json_file(path):
     if not os.path.exists(path):
         with open(path, "w+") as f:
             json.dump({}, f)
+
 def save_runs_num(runs_num_file, runs_num, method, label_and_size, network, precision=PRECISION):
     user_logger.info("pasten - {}".format(runs_num_file))
     create_default_json_file(runs_num_file)
@@ -596,6 +606,7 @@ def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, score_func, 
     save_runs_num(OUTCOMES_PATH, rng_bin_srch_runs_num, method="rng_bin_{}".format(score_func.__name__), label_and_size=name_for_log, network=config.netname)
 
     return rng_bin_srch_epsilons
+
 def check_epsilons_naive_img_one_by_one(imgs_list, size, name_for_log):
     user_logger.info("start naive {}".format(name_for_log))
 
@@ -610,6 +621,7 @@ def check_epsilons_naive_img_one_by_one(imgs_list, size, name_for_log):
     save_runs_num(OUTCOMES_PATH, naive_runs_num, method="naive", label_and_size=name_for_log, network=config.netname)
 
     return naive_epsilons
+
 def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method):
     start_time = time.time()
 
@@ -634,6 +646,7 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
     user_logger.info('Execution time: {} minutes'. format(elapsed_time))
 
     return ret
+
 def check_epsilons_diversed_methods(num_imgs, label, methods):
 
     user_logger.info("######################## start logging ########################")

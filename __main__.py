@@ -697,7 +697,7 @@ def main():
     # methods = ["naive", "rng_binary_by_confidence"]
     # run_and_check_range_sizes_X_labels(sizes, labels, methods)
 
-    sizes = [64]
+    sizes = [1024]
     labels = [2,]
     methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)

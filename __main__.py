@@ -44,7 +44,7 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-VERSION = "guess_range_after_mistake"
+VERSION = "restart_range_after_mistake"
 PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
 TEST = False
@@ -505,8 +505,8 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
             if not (mid_img_eps == EPS_IS_LOWER and lower == MIN_EPS):
                 # otherwise the image is bad image
 
-                num_of_runs_after_mistake, new_lower ,new_upper, mid_img_eps = epsilon_out_of_iter_range(mid_img_eps, mid_img, lower, upper, is_in_range)
-                # num_of_runs_after_mistake, new_lower ,new_upper, lower, upper, mid_img_eps = epsilon_out_of_iter_restart(mid_img, is_in_range)
+                # num_of_runs_after_mistake, new_lower ,new_upper, mid_img_eps = epsilon_out_of_iter_range(mid_img_eps, mid_img, lower, upper, is_in_range)
+                num_of_runs_after_mistake, new_lower ,new_upper, lower, upper, mid_img_eps = epsilon_out_of_iter_restart(mid_img, is_in_range)
                 num_of_runs += num_of_runs_after_mistake
             else:
                 new_upper = upper

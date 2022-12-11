@@ -699,7 +699,7 @@ def main():
 
     sizes = [64]
     labels = [2,]
-    methods = ["rng_binary_by_confidence", "rng_binary_by_random"]
+    methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)
     #
     # time.sleep(60 * 60 * 5)

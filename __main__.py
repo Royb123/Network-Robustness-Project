@@ -489,9 +489,8 @@ def epsilon_out_of_iter_range(img_eps, img, lower, upper, is_in_range):
 
 def epsilon_out_of_iter_restart(img, is_in_range):
     img_eps, num_of_runs_after_mistake = binary_search(img.image, MIN_EPS, MAX_EPS, is_in_range)
-    check_bad_image(img_eps)
 
-    return num_of_runs_after_mistake, MIN_EPS, MAX_EPS, img_eps
+    return num_of_runs_after_mistake, MIN_EPS, MAX_EPS, MIN_EPS, MAX_EPS, img_eps
 
 
 def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
@@ -507,9 +506,11 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
                 # otherwise the image is bad image
 
                 num_of_runs_after_mistake, new_lower ,new_upper, mid_img_eps = epsilon_out_of_iter_range(mid_img_eps, mid_img, lower, upper, is_in_range)
-                # num_of_runs_after_mistake, new_lower ,new_upper, mid_img_eps = epsilon_out_of_iter_restart(mid_img, is_in_range)
+                # num_of_runs_after_mistake, new_lower ,new_upper, lower, upper, mid_img_eps = epsilon_out_of_iter_restart(mid_img, is_in_range)
                 num_of_runs += num_of_runs_after_mistake
-
+            else:
+                new_upper = upper
+                new_lower = lower
         else:
             # Epsilon is in bounderies
             new_upper = new_lower = mid_img_eps

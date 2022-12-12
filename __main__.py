@@ -540,12 +540,12 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
             if not (mid_img_eps == EPS_IS_LOWER and lower == MIN_EPS):
                 # otherwise the image is bad image
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, MAX_EPS, is_in_range)
-
+                num_of_runs += num_of_runs_after_mistake
             imgs.pop(mid_indx)
             reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs, lower, upper, is_in_range)
 
             epsilon_list = reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:]
-            total_runs = num_of_runs + reduced_eps_runs + num_of_runs_after_mistake
+            total_runs = num_of_runs + reduced_eps_runs
 
         else:
             # Epsilon is in bounderies

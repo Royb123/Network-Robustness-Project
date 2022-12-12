@@ -44,7 +44,7 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-VERSION = "restart_range_after_mistake"
+VERSION = "ignore_range_after_mistake"
 PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
 TEST = False
@@ -528,6 +528,42 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
     else:
         return [], 0
 
+def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
+    user_logger.info("rng binary_search: ")
+
+    if imgs:
+        mid_indx = round(len(imgs)/2)
+        mid_img = imgs[mid_indx]
+        mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
+
+        if mid_img_eps < MIN_EPS:
+            if not (mid_img_eps == EPS_IS_LOWER and lower == MIN_EPS):
+                # otherwise the image is bad image
+                mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, MAX_EPS, is_in_range)
+
+            imgs.pop(mid_indx)
+            reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs, lower, upper, is_in_range)
+
+            epsilon_list = reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:]
+            total_runs = num_of_runs + reduced_eps_runs + num_of_runs_after_mistake
+
+        else:
+            # Epsilon is in bounderies
+            new_upper = new_lower = mid_img_eps
+
+            lower_list = imgs[:mid_indx]
+            lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list, lower, new_upper, is_in_range)
+
+            upper_list = imgs[mid_indx+1:]
+            upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, new_lower, upper, is_in_range)
+
+            epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
+            total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
+
+        return epsilon_list, total_runs
+
+    else:
+        return [], 0
 
 def save_epsilons_to_csv(eps_list, num_of_iter, path):
     header = ['max_epsilon', 'index', 'num_of_runs']
@@ -577,7 +613,7 @@ def create_indexed_img_list_from_dataset(imgs_list):
 def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, score_func=confidence_score_func):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
     sorted_imgs = sorted(imgs, key=lambda img: score_func(img.image))
-    epsilons, runs_num = get_all_eps_with_mistakes_control(sorted_imgs)
+    epsilons, runs_num = get_all_eps_with_mistakes_control_ignore_method(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
 
@@ -665,7 +701,7 @@ def check_epsilons_diversed_method(num_imgs, label, method):
         'Network: {network}, number of images: {img_num}, digit: {digit}, method: {met}'.format(network=config.netname,
                                                                                               img_num=str(num_imgs),
                                                                                               digit=str(label),
-                                                                                                met=method.__name__))
+                                                                                              met=method.__name__))
 
     if all([i == epsilons_list[0] for i in epsilons_list]):
         user_logger.info("epsilon lists are identical")

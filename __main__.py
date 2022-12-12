@@ -590,8 +590,8 @@ def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, score_func
 
 def run_and_check_range_sizes_X_labels(sizes, labels, methods):
     str_labels = [str(label) for label in labels]
-    for size, label in product(sizes, str_labels):
-        p = Process(target=check_epsilons_diversed_methods, args=(size, label, methods))
+    for size, label, nethod in product(sizes, str_labels, methods):
+        p = Process(target=check_epsilons_diversed_method, args=(size, label, nethod))
         p.start()
 
 def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, score_func, name_for_log):
@@ -648,7 +648,7 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
 
     return ret
 
-def check_epsilons_diversed_methods(num_imgs, label, methods):
+def check_epsilons_diversed_method(num_imgs, label, method):
 
     user_logger.info("######################## start logging ########################")
 
@@ -660,17 +660,17 @@ def check_epsilons_diversed_methods(num_imgs, label, methods):
 
     basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label), str(num_imgs))
 
-    for method in methods:
-        epsilons_list.append(check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method))
-        user_logger.info(
-            'Network: {network}, number of images: {img_num}, digit: {digit}, methods'.format(network=config.netname,
+    epsilons_list.append(check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method))
+    user_logger.info(
+        'Network: {network}, number of images: {img_num}, digit: {digit}, method: {met}'.format(network=config.netname,
                                                                                               img_num=str(num_imgs),
-                                                                                              digit=str(label), ))
+                                                                                              digit=str(label),
+                                                                                                met=method.__name__))
 
     if all([i == epsilons_list[0] for i in epsilons_list]):
         user_logger.info("epsilon lists are identical")
     else:
-        user_logger.info("methods - {}".format(methods))
+        user_logger.info("methods - {}".format(method))
         for epsilons in epsilons_list:
             user_logger.info("epsilons - {}".format(epsilons))
         user_logger.error('epsilon lists not identical')
@@ -697,7 +697,7 @@ def main():
     # methods = ["naive", "rng_binary_by_confidence"]
     # run_and_check_range_sizes_X_labels(sizes, labels, methods)
 
-    sizes = [1024]
+    sizes = [16]
     labels = [2,]
     methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)

@@ -613,10 +613,6 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
                     upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, true_img_eps,
                                                     upper, before_lower, before_upper, is_in_range)
 
-                    epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
-                    total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
-
-
             elif mid_img_eps == EPS_IS_HIGHER:
                 true_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, lower, MAX_EPS, is_in_range)
                 check_bad_image(true_img_eps)
@@ -641,9 +637,6 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
                     upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list,
                                                     lower, before_upper, before_lower, MAX_EPS, is_in_range)
 
-                    epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
-                    total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
-
             else:
                 raise Exception("false return value of binary_search")
 
@@ -657,9 +650,8 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
             upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, mid_img_eps,
                                             upper, lower, before_upper, is_in_range)
 
-            epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
-            total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
-
+        epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
+        total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
         return epsilon_list, total_runs
 
     else:

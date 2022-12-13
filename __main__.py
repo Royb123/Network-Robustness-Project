@@ -608,9 +608,11 @@ def sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path):
     return sorted_imgs
 
 def get_score_func_sort_correctly(imgs, size, eps_file_path):
-    sorted_imgs = sort_img_correctly(imgs, size, eps_file_path)
+    sorted_imgs = sort_img_correctly(create_indexed_img_list_from_dataset(imgs), size, eps_file_path)
 
     def test_score_func(img):
+        logging.info(type(img))
+        logging.info(type(sorted_imgs[0]))
         return sorted_imgs.index(img)
 
     return test_score_func
@@ -677,8 +679,7 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
 
         if method == "naive_and_rng_binary_sorted_correctly":
 
-            sorted_correctly_score_func = get_score_func_sort_correctly(create_indexed_img_list_from_dataset(
-                imgs_list), size, eps_file_path)
+            sorted_correctly_score_func = get_score_func_sort_correctly(imgs_list, size, eps_file_path)
             ret += [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, sorted_correctly_score_func,
                                                              "{}_scored_randomly".format(basename_for_log)),]
 

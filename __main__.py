@@ -676,7 +676,9 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
         ret = [naive_ret,]
 
         if method == "naive_and_rng_binary_sorted_correctly":
-            sorted_correctly_score_func = get_score_func_sort_correctly(imgs_list, size, eps_file_path)
+
+            sorted_correctly_score_func = get_score_func_sort_correctly(create_indexed_img_list_from_dataset(
+                imgs_list), size, eps_file_path)
             ret += [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, sorted_correctly_score_func,
                                                              "{}_scored_randomly".format(basename_for_log)),]
 

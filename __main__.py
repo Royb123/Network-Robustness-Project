@@ -604,7 +604,16 @@ def sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path):
     user_logger.info("sort_img_correctly: sorted epsilons {}".format(sorted_eps_arr))
     sorted_imgs = sorted(indexed_imgs_list, key=lambda img: sorted_eps_arr[img.index][0])
     user_logger.info("sort_img_correctly: sorted imgs {}".format([img.index for img in sorted_imgs]))
+
     return sorted_imgs
+
+def get_score_func_sort_correctly(imgs, size, eps_file_path):
+    sorted_imgs = sort_img_correctly(imgs, size, eps_file_path)
+
+    def test_score_func(img):
+        return sorted_imgs.index(img)
+
+    return test_score_func
 
 def create_indexed_img_list_from_dataset(imgs_list):
     return [Image(imgs_list[i], i) for i in range(len(imgs_list))]
@@ -657,21 +666,27 @@ def check_epsilons_naive_img_one_by_one(imgs_list, size, name_for_log):
 
     save_runs_num(OUTCOMES_PATH, naive_runs_num, method="naive", label_and_size=name_for_log, network=config.netname)
 
-    return naive_epsilons
+    return naive_epsilons, eps_file_path
 
 def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method):
     start_time = time.time()
 
-    if method == "naive":
-        ret = check_epsilons_naive_img_one_by_one(imgs_list, size, basename_for_log)
+    if "naive" in method:
+        naive_ret, eps_file_path = check_epsilons_naive_img_one_by_one(imgs_list, size, basename_for_log)
+        ret = [naive_ret,]
+
+        if method == "naive_and_rng_binary_sorted_correctly":
+            sorted_correctly_score_func = get_score_func_sort_correctly(imgs_list, size, eps_file_path)
+            ret += [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, sorted_correctly_score_func,
+                                                             "{}_scored_randomly".format(basename_for_log)),]
 
     elif method == "rng_binary_by_confidence":
-        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, confidence_score_func, "{}_scored_confidence".format(basename_for_log))
+        ret = [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, confidence_score_func,
+                                                              "{}_scored_confidence".format(basename_for_log)),]
 
     elif method == "rng_binary_by_random":
-        ret = check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, random_score_func, "{}_scored_randomly".format(basename_for_log))
-
-    # TODO add TEST (see sort_img_correctly)
+        ret = [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, random_score_func,
+                                                              "{}_scored_randomly".format(basename_for_log)),]
 
     else:
         raise Exception("unknown method")
@@ -696,7 +711,7 @@ def check_epsilons_diversed_method(num_imgs, label, method):
 
     basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label), str(num_imgs))
 
-    epsilons_list.append(check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method))
+    epsilons_list += check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method)
     user_logger.info(
         'Network: {network}, number of images: {img_num}, digit: {digit}, method: {met}'.format(network=config.netname,
                                                                                               img_num=str(num_imgs),
@@ -735,7 +750,7 @@ def main():
 
     sizes = [1024]
     labels = [2,]
-    methods = ["naive", "rng_binary_by_confidence", "rng_binary_by_random"]
+    methods = ["naive_and_rng_binary_sorted_correctly",]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)
     #
     # time.sleep(60 * 60 * 5)

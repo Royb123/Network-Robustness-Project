@@ -574,8 +574,6 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
 
         if mid_img_eps < MIN_EPS:
             # check which boundary is wrong
-            ignore_and_restart = False
-
             if mid_img_eps == EPS_IS_LOWER:
                 if lower != MIN_EPS:
                     true_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, upper, is_in_range)
@@ -584,15 +582,26 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
                     if true_img_eps != EPS_IS_LOWER:
                         num_of_runs += num_of_runs_after_mistake
                     else:
-                        # image is bad image
-                        ignore_and_restart = True
+                        # image is bad image, ignore and restart
+                        imgs.pop(mid_indx)
+                        reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
+                                                                 lower, upper, before_lower, before_upper, is_in_range)
+                        return reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:], num_of_runs + reduced_eps_runs
+
                 else:
-                    # image is bad image
-                    ignore_and_restart = True
+                    # image is bad image, ignore and restart
+                    imgs.pop(mid_indx)
+                    reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
+                                                             lower, upper, before_lower, before_upper, is_in_range)
+                    return reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:], num_of_runs + reduced_eps_runs
 
                 if true_img_eps < before_lower:
-                    # img order is wrong
-                    ignore_and_restart = True
+                    # img order is wrong, ignore and restart
+                    imgs.pop(mid_indx)
+                    reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
+                                                             lower, upper, before_lower, before_upper, is_in_range)
+                    return reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:], num_of_runs + reduced_eps_runs
+
 
                 else:
                     # lower or img_eps is wrong
@@ -615,8 +624,12 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
                 num_of_runs += num_of_runs_after_mistake
 
                 if true_img_eps > before_upper:
-                    # img order is wrong
-                    ignore_and_restart = True
+                    # img order is wrong, ignore and restart
+                    imgs.pop(mid_indx)
+                    reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
+                                                             lower, upper, before_lower, before_upper, is_in_range)
+                    return reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:], num_of_runs + reduced_eps_runs
+
 
                 else:
                     # upper or img_eps is wrong
@@ -633,15 +646,6 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
 
             else:
                 raise Exception("false return value of binary_search")
-
-            if ignore_and_restart:
-                imgs.pop(mid_indx)
-                reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs, lower,
-                                                        upper, before_lower, before_upper, is_in_range)
-
-                epsilon_list = reduced_eps_list[:mid_indx] + [
-                    (Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:]
-                total_runs = num_of_runs + reduced_eps_runs
 
         else:
             # Epsilon in bounderies

@@ -44,7 +44,7 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-VERSION = "ignore_range_after_mistake"
+VERSION = "check_before_range_after_mistake"
 PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
 TEST = False
@@ -526,7 +526,7 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
     else:
         return [], 0
 
-def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
+def get_all_eps_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
     user_logger.info("rng binary_search: ")
 
     if imgs:
@@ -540,7 +540,7 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, MAX_EPS, is_in_range)
                 num_of_runs += num_of_runs_after_mistake
             imgs.pop(mid_indx)
-            reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs, lower, upper, is_in_range)
+            reduced_eps_list, reduced_eps_runs = get_all_eps_ignore_method(imgs, lower, upper, is_in_range)
 
             epsilon_list = reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:]
             total_runs = num_of_runs + reduced_eps_runs
@@ -550,10 +550,10 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
             new_upper = new_lower = mid_img_eps
 
             lower_list = imgs[:mid_indx]
-            lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list, lower, new_upper, is_in_range)
+            lower_eps, lower_eps_runs = get_all_eps_ignore_method(lower_list, lower, new_upper, is_in_range)
 
             upper_list = imgs[mid_indx+1:]
-            upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, new_lower, upper, is_in_range)
+            upper_eps, upper_eps_runs = get_all_eps_ignore_method(upper_list, new_lower, upper, is_in_range)
 
             epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
             total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
@@ -562,6 +562,106 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
 
     else:
         return [], 0
+
+def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, before_lower=MIN_EPS,
+                                                    before_upper=MAX_EPS, is_in_range=run_eran):
+    user_logger.info("rng binary_search: ")
+
+    if imgs:
+        mid_indx = round(len(imgs)/2)
+        mid_img = imgs[mid_indx]
+        mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
+
+        if mid_img_eps < MIN_EPS:
+            # check which boundary is wrong
+            ignore_and_restart = False
+
+            if mid_img_eps == EPS_IS_LOWER:
+                if lower != MIN_EPS:
+                    true_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, upper, is_in_range)
+                    check_bad_image(true_img_eps)
+
+                    if true_img_eps != EPS_IS_LOWER:
+                        num_of_runs += num_of_runs_after_mistake
+                    else:
+                        # image is bad image
+                        ignore_and_restart = True
+                else:
+                    # image is bad image
+                    ignore_and_restart = True
+
+                if true_img_eps < before_lower:
+                    # img order is wrong
+                    ignore_and_restart = True
+
+                else:
+                    # lower or img_eps is wrong
+                    lower_list = imgs[:mid_indx]
+                    lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list, before_lower,
+                                                    upper, MIN_EPS, before_upper, is_in_range)
+
+                    upper_list = imgs[mid_indx + 1:]
+                    upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, true_img_eps,
+                                                    upper, before_lower, before_upper, is_in_range)
+
+                    epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
+                    total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
+
+
+            elif mid_img_eps == EPS_IS_HIGHER:
+                true_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, lower, MAX_EPS, is_in_range)
+                check_bad_image(true_img_eps)
+
+                num_of_runs += num_of_runs_after_mistake
+
+                if true_img_eps > before_upper:
+                    # img order is wrong
+                    ignore_and_restart = True
+
+                else:
+                    # upper or img_eps is wrong
+                    lower_list = imgs[:mid_indx]
+                    lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list,
+                                                    lower, true_img_eps, before_lower, before_upper, is_in_range)
+
+                    upper_list = imgs[mid_indx + 1:]
+                    upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list,
+                                                    lower, before_upper, before_lower, MAX_EPS, is_in_range)
+
+                    epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
+                    total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
+
+            else:
+                raise Exception("false return value of binary_search")
+
+            if ignore_and_restart:
+                imgs.pop(mid_indx)
+                reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs, lower,
+                                                        upper, before_lower, before_upper, is_in_range)
+
+                epsilon_list = reduced_eps_list[:mid_indx] + [
+                    (Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:]
+                total_runs = num_of_runs + reduced_eps_runs
+
+        else:
+            # Epsilon in bounderies
+            lower_list = imgs[:mid_indx]
+            lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list, lower,
+                                            mid_img_eps, before_lower, upper, is_in_range)
+
+            upper_list = imgs[mid_indx+1:]
+            upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, mid_img_eps,
+                                            upper, lower, before_upper, is_in_range)
+
+            epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
+            total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
+
+        return epsilon_list, total_runs
+
+    else:
+        return [], 0
+
+
 
 def save_epsilons_to_csv(eps_list, num_of_iter, path):
     header = ['max_epsilon', 'index', 'num_of_runs']
@@ -747,11 +847,18 @@ def main():
     # methods = ["naive", "rng_binary_by_confidence"]
     # run_and_check_range_sizes_X_labels(sizes, labels, methods)
 
-    sizes = [1024]
+    sizes = [16]
     labels = [2,]
-    methods = ["naive_and_rng_binary_sorted_correctly",]
+    methods = ["rng_binary_by_confidence",]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)
-    #
+
+    time.sleep(60)
+
+    sizes = [1024]
+    labels = [2, ]
+    methods = ["naive", "naive_and_rng_binary_sorted_correctly", "rng_binary_by_confidence", "rng_binary_by_random" ]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods)
+
     # time.sleep(60 * 60 * 5)
     # sizes = [900,]
     # labels = range(10)

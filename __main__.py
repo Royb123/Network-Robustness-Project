@@ -235,6 +235,8 @@ class Image(object):
         self.image = image #label + 28x28 image if MNIST
         self.index = index
 
+    def __eq__(self, other):
+        return self.index == other.index
 
 class Epsilon(float):
     def __eq__(self, other):
@@ -608,7 +610,7 @@ def sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path):
     return sorted_imgs
 
 def get_score_func_sort_correctly(imgs, size, eps_file_path):
-    sorted_imgs = list(sort_img_correctly(create_indexed_img_list_from_dataset(imgs), size, eps_file_path))
+    sorted_imgs = sort_img_correctly(create_indexed_img_list_from_dataset(imgs), size, eps_file_path)
 
     def test_score_func(img):
         return sorted_imgs.index(img)

@@ -316,16 +316,12 @@ def eran_dummy_func(mid, i):
 
 
 def confidence_score_func(img):
-    labels_confidence = run_eran([img], MIN_EPS)[0][0]
+    labels_confidence = run_eran([img.image], MIN_EPS)[0][0]
     two_highest_conf_lbl = heapq.nlargest(2, labels_confidence)
     return abs(two_highest_conf_lbl[0] - two_highest_conf_lbl[1])
 
 def random_score_func(img):
     return random.random()
-
-def test_score_func(a, cheat_sheet):
-
-    return cheat_sheet[a[0]]
 
 
 def choose_index(range_list):
@@ -623,7 +619,7 @@ def create_indexed_img_list_from_dataset(imgs_list):
 
 def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, score_func=confidence_score_func):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
-    sorted_imgs = sorted(imgs, key=lambda img: score_func(img.image))
+    sorted_imgs = sorted(imgs, key=lambda img: score_func(img))
     epsilons, runs_num = get_all_eps_with_mistakes_control_ignore_method(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num

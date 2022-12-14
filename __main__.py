@@ -44,7 +44,7 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-VERSION = "check_before_range_after_mistake"
+VERSION = "ignore_range_after_mistake"
 PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
 TEST = False
@@ -538,7 +538,10 @@ def get_all_eps_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=ru
             if not (mid_img_eps == EPS_IS_LOWER and lower == MIN_EPS):
                 # otherwise the image is bad image
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, MAX_EPS, is_in_range)
-                num_of_runs += num_of_runs_after_mistake
+                if mid_img_eps != EPS_IS_LOWER:
+                    # otherwise the image is bad image
+                    num_of_runs += num_of_runs_after_mistake
+
             imgs.pop(mid_indx)
             reduced_eps_list, reduced_eps_runs = get_all_eps_ignore_method(imgs, lower, upper, is_in_range)
 
@@ -716,7 +719,7 @@ def create_indexed_img_list_from_dataset(imgs_list):
 def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, score_func=confidence_score_func):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
     sorted_imgs = sorted(imgs, key=lambda img: score_func(img))
-    epsilons, runs_num = get_all_eps_with_mistakes_control_ignore_method(sorted_imgs)
+    epsilons, runs_num = get_all_eps_ignore_method(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
 
@@ -773,7 +776,7 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
 
             sorted_correctly_score_func = get_score_func_sort_correctly(imgs_list, size, eps_file_path)
             ret += [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, sorted_correctly_score_func,
-                                                             "{}_scored_randomly".format(basename_for_log)),]
+                                                             "{}_sorted_correctly".format(basename_for_log)),]
 
     elif method == "rng_binary_by_confidence":
         ret = [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, confidence_score_func,
@@ -843,12 +846,12 @@ def main():
     # methods = ["naive", "rng_binary_by_confidence"]
     # run_and_check_range_sizes_X_labels(sizes, labels, methods)
 
-    sizes = [16]
-    labels = [2,]
-    methods = ["rng_binary_by_confidence",]
-    run_and_check_range_sizes_X_labels(sizes, labels, methods)
-
-    time.sleep(60)
+    # sizes = [16]
+    # labels = [2,]
+    # methods = ["rng_binary_by_confidence",]
+    # run_and_check_range_sizes_X_labels(sizes, labels, methods)
+    #
+    # time.sleep(60 * 10)
 
     sizes = [1024]
     labels = [2, ]

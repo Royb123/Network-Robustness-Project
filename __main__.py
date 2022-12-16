@@ -208,13 +208,14 @@ class Dataset(object):
         """
         input is from class dataset, output is a dictionary, keys are according to labels
         """
+        images = self.train_labels
         organized_images = dict.fromkeys(self.labels)
-        for i in range(len(self.test_labels)):
-            key = self.labels[dataset_labels_setup_func[self.name](self.test_labels, i)]
+        for i in range(len(images)):
+            key = self.labels[dataset_labels_setup_func[self.name](images, i)]
             if organized_images[key] is None:
-                organized_images[key] = [self.test_images[i]]
+                organized_images[key] = [images[i]]
             else:
-                organized_images[key] = np.append(organized_images[key], [self.test_images[i]], axis=0)
+                organized_images[key] = np.append(organized_images[key], [images[i]], axis=0)
         self.organized_images = organized_images
 
     def create_dict_to_eran(self):
@@ -732,8 +733,8 @@ def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, score_func
 
 def run_and_check_range_sizes_X_labels(sizes, labels, methods):
     str_labels = [str(label) for label in labels]
-    for size, label, nethod in product(sizes, str_labels, methods):
-        p = Process(target=check_epsilons_diversed_method, args=(size, label, nethod))
+    for size, label, method in product(sizes, str_labels, methods):
+        p = Process(target=check_epsilons_diversed_method, args=(size, label, method))
         p.start()
 
 def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, score_func, name_for_log):
@@ -853,8 +854,8 @@ def main():
     #
     # time.sleep(60 * 10)
 
-    sizes = [1024]
-    labels = [2, ]
+    sizes = [2048]
+    labels = [2, 8]
     methods = ["naive", "naive_and_rng_binary_sorted_correctly", "rng_binary_by_confidence", "rng_binary_by_random" ]
     run_and_check_range_sizes_X_labels(sizes, labels, methods)
 

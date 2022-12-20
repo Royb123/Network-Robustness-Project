@@ -49,7 +49,7 @@ PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
 TEST = False
 LOGGER_PATH = r"/root/logging/user_logger"
-OUTCOMES_PATH = '/root/ERAN/tf_verify/outcomes.json'
+OUTCOMES_PATH = '/root/ERAN/tf_verify/outcomes_{version}.json'.format(version=VERSION)
 
 
 dataset_labels_setup = {
@@ -728,6 +728,11 @@ def create_indexed_img_list_from_dataset(imgs_list):
 def rng_search_all_epsilons_sorted_by_score_func(imgs_list, method, score_func=confidence_score_func):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
     sorted_imgs = sorted(imgs, key=lambda img: score_func(img))
+    user_logger.info("imgs_list {}".format(imgs_list))
+    user_logger.info("sorted_imgs {}".format(sorted_imgs))
+    user_logger.info("sorted_imgs[0] {}".format(sorted_imgs[0]))
+    user_logger.info("imgs_list[0] {}".format(imgs_list[0]))
+
     epsilons, runs_num = method(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num

@@ -533,6 +533,9 @@ def get_all_eps_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=ru
     if imgs:
         mid_indx = round(len(imgs)/2)
         mid_img = imgs[mid_indx]
+        user_logger.debug("img {}, lower {}, upper {}, is_in_range {}".format(mid_img, lower, upper, is_in_range.__name__))
+        user_logger.debug("types: img {}, lower {}, upper {}, is_in_range {}".format(type(mid_img), type(lower), type(upper), type(is_in_range)))
+
         mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
 
         if mid_img_eps < MIN_EPS:

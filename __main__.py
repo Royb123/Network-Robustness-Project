@@ -44,7 +44,7 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-VERSION = "ignore_range_after_mistake"
+VERSION = "3.0"
 PRECISION = 4
 USE_SUBPROCESS_AND_WAIT = True
 TEST = False
@@ -528,7 +528,7 @@ def get_all_eps_with_mistakes_control(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_
         return [], 0
 
 def get_all_eps_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=run_eran):
-    user_logger.info("rng binary_search: ")
+    user_logger.info("rng binary_search_ignore: ")
 
     if imgs:
         mid_indx = round(len(imgs)/2)
@@ -540,6 +540,7 @@ def get_all_eps_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=ru
                 # otherwise the image is bad image
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, MAX_EPS, is_in_range)
                 if mid_img_eps != EPS_IS_LOWER:
+                    user_logger.debug("ignore bad_image")
                     # otherwise the image is bad image
                     num_of_runs += num_of_runs_after_mistake
 
@@ -569,7 +570,7 @@ def get_all_eps_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=ru
 
 def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, before_lower=MIN_EPS,
                                                     before_upper=MAX_EPS, is_in_range=run_eran):
-    user_logger.info("rng binary_search: ")
+    user_logger.info("rng binary_search_mistakes_control_ignore: ")
 
     if imgs:
         mid_indx = round(len(imgs)/2)
@@ -586,6 +587,8 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
                     if true_img_eps != EPS_IS_LOWER:
                         num_of_runs += num_of_runs_after_mistake
                     else:
+                        user_logger.debug("ignore mistakes_control bad_image")
+
                         # image is bad image, ignore and restart
                         imgs.pop(mid_indx)
                         reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
@@ -676,14 +679,14 @@ def create_default_json_file(path):
         with open(path, "w+") as f:
             json.dump({}, f)
 
-def save_runs_num(runs_num_file, runs_num, method, label_and_size, network, precision=PRECISION):
-    user_logger.info("pasten - {}".format(runs_num_file))
+def save_runs_num(runs_num_file, runs_num, options, network, precision=PRECISION):
+    user_logger.debug("pasten - {}".format(runs_num_file))
     create_default_json_file(runs_num_file)
     with open(runs_num_file, "r") as f:
         runs_num_dict = json.load(f)
 
     # using json.dumps(key) only for using jsom.dump on dictionery with key as key
-    key = json.dumps((method, os.path.basename(network), label_and_size, precision, VERSION))
+    key = json.dumps((os.path.basename(network), options, precision, VERSION))
 
     if key in runs_num_dict:
         if runs_num not in runs_num_dict[key]:
@@ -731,23 +734,23 @@ def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, score_func
 #         p.starmap(run_and_check_one_iteration, product(sizes, str_labels))
 
 
-def run_and_check_range_sizes_X_labels(sizes, labels, methods):
+def run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs):
     str_labels = [str(label) for label in labels]
-    for size, label, method in product(sizes, str_labels, methods):
-        p = Process(target=check_epsilons_diversed_method, args=(size, label, method))
+    for size, label, met, s_func in product(sizes, str_labels, methods, score_funcs):
+        p = Process(target=check_epsilons_diversed_method, args=(size, label, met, s_func))
         p.start()
 
-def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, score_func, name_for_log):
+def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, method, score_func, name_for_log):
     user_logger.info("start rng_binary {}".format(name_for_log))
 
-    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons_sorted_by_score_func(imgs_list, size, score_func=score_func)
+    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons_sorted_by_score_func(imgs_list, size, method=method, score_func=score_func)
 
     user_logger.info('rng_binary {} # num of runs: {}'.format(name_for_log, rng_bin_srch_runs_num))
     user_logger.info('rng_binary {} # epsilons: {}'.format(name_for_log, rng_bin_srch_epsilons))
 
     rng_path = '/root/ERAN/tf_verify/rng_binary_srch_score_{}.csv'.format(name_for_log)
     save_epsilons_to_csv(rng_bin_srch_epsilons, rng_bin_srch_runs_num, rng_path)
-    save_runs_num(OUTCOMES_PATH, rng_bin_srch_runs_num, method="rng_bin_{}".format(score_func.__name__), label_and_size=name_for_log, network=config.netname)
+    save_runs_num(OUTCOMES_PATH, rng_bin_srch_runs_num, options=name_for_log, network=config.netname)
 
     return rng_bin_srch_epsilons
 
@@ -762,34 +765,44 @@ def check_epsilons_naive_img_one_by_one(imgs_list, size, name_for_log):
     user_logger.info('Naive {} # num of runs: {}'.format(name_for_log, naive_runs_num))
     user_logger.info('naive {} # epsilons: {}'.format(name_for_log, naive_epsilons))
 
-    save_runs_num(OUTCOMES_PATH, naive_runs_num, method="naive", label_and_size=name_for_log, network=config.netname)
+    save_runs_num(OUTCOMES_PATH, naive_runs_num, options="naive_{}".format(name_for_log), network=config.netname)
 
     return naive_epsilons, eps_file_path
 
-def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method):
+def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method_string="ignore", score_func_string="rng_binary_by_confidence"):
     start_time = time.time()
 
-    if "naive" in method:
-        naive_ret, eps_file_path = check_epsilons_naive_img_one_by_one(imgs_list, size, basename_for_log)
-        ret = [naive_ret,]
-
-        if method == "naive_and_rng_binary_sorted_correctly":
-
-            sorted_correctly_score_func = get_score_func_sort_correctly(imgs_list, size, eps_file_path)
-            ret += [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, sorted_correctly_score_func,
-                                                             "{}_sorted_correctly".format(basename_for_log)),]
-
-    elif method == "rng_binary_by_confidence":
-        ret = [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, confidence_score_func,
-                                                              "{}_scored_confidence".format(basename_for_log)),]
-
-    elif method == "rng_binary_by_random":
-        ret = [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, random_score_func,
-                                                              "{}_scored_randomly".format(basename_for_log)),]
-
+    # Check method
+    if method_string == "ignore":
+        method_func = get_all_eps_ignore_method
+    elif method_string == "ignore_mistake_control":
+        method_func = get_all_eps_with_mistakes_control_ignore_method
     else:
         raise Exception("unknown method")
 
+    # Check naive score_func
+    if "naive" in score_func_string:
+        naive_ret, eps_file_path = check_epsilons_naive_img_one_by_one(imgs_list, size, basename_for_log)
+        ret = [naive_ret,]
+
+        if score_func_string == "naive_and_sorted_correctly":
+
+            sorted_correctly_score_func = get_score_func_sort_correctly(imgs_list, size, eps_file_path)
+            ret += [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, method_func, sorted_correctly_score_func,
+                                                             "{}_sorted_correctly_method_{}".format(basename_for_log, method_string)),]
+
+    else:
+        # Check score_func
+        if score_func_string == "confidence":
+            score_func = confidence_score_func
+        elif score_func_string == "random":
+            score_func = random_score_func
+        else:
+            raise Exception("unknown score_func")
+
+        ret = [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, method_func, score_func,
+                                                                "{}_method_{}_scored_{}".format(basename_for_log,
+                                                                method_string, score_func_string)),]
 
     end_time = time.time()
     elapsed_time = (start_time - end_time) / 60  # convert to minutes
@@ -798,7 +811,7 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
 
     return ret
 
-def check_epsilons_diversed_method(num_imgs, label, method):
+def check_epsilons_diversed_method(num_imgs, label, method_str, score_func_string):
 
     user_logger.info("######################## start logging ########################")
 
@@ -810,17 +823,16 @@ def check_epsilons_diversed_method(num_imgs, label, method):
 
     basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label), str(num_imgs))
 
-    epsilons_list += check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method)
+    epsilons_list += check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method_string=method_str, score_func_string=score_func_string)
     user_logger.info(
-        'Network: {network}, number of images: {img_num}, digit: {digit}, method: {met}'.format(network=config.netname,
-                                                                                              img_num=str(num_imgs),
-                                                                                              digit=str(label),
-                                                                                              met=method.__name__))
+        'Network: {network}, number of images: {img_num}, digit: {digit}, score_func: {s_func}, method: {met}'.format(
+            network=config.netname, img_num=str(num_imgs), digit=str(label), s_func=score_func_string, met=method_str))
 
     if all([i == epsilons_list[0] for i in epsilons_list]):
         user_logger.info("epsilon lists are identical")
     else:
-        user_logger.info("methods - {}".format(method))
+        user_logger.info("score_func - {}".format(score_func_string))
+        user_logger.info("method - {}".format(method_str))
         for epsilons in epsilons_list:
             user_logger.info("epsilons - {}".format(epsilons))
         user_logger.error('epsilon lists not identical')
@@ -841,29 +853,11 @@ def main():
     """
     parse_args()
 
-
-    # sizes = [8 * (2 ** i) for i in range(4,8)] + [4096]
-    # labels = [2,9]
-    # methods = ["naive", "rng_binary_by_confidence"]
-    # run_and_check_range_sizes_X_labels(sizes, labels, methods)
-
-    # sizes = [16]
-    # labels = [2,]
-    # methods = ["rng_binary_by_confidence",]
-    # run_and_check_range_sizes_X_labels(sizes, labels, methods)
-    #
-    # time.sleep(60 * 10)
-
     sizes = [2048]
     labels = [2, 8]
-    methods = ["naive", "naive_and_rng_binary_sorted_correctly", "rng_binary_by_confidence", "rng_binary_by_random" ]
-    run_and_check_range_sizes_X_labels(sizes, labels, methods)
-
-    # time.sleep(60 * 60 * 5)
-    # sizes = [900,]
-    # labels = range(10)
-    # methods = [ "rng_binary_by_confidence"]
-    # run_and_check_range_sizes_X_labels(sizes, labels, methods)
+    methods = ["ignore", "ignore_mistake_control"]
+    score_funcs = ["naive_and_rng_binary_sorted_correctly"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
 if __name__ == "__main__":
     try:

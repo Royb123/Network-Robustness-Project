@@ -831,6 +831,9 @@ def check_epsilons_diversed_method(num_imgs, label, method_str, score_func_strin
     imgs_list = dataset[label][:num_imgs-1]
     epsilons_list = []
 
+    user_logger.info("base_imgs_list {}".format(imgs_list))
+    user_logger.info("base_imgs_list[0] {}".format(imgs_list[0]))
+
     basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label), str(num_imgs))
 
     epsilons_list += check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method_string=method_str, score_func_string=score_func_string)

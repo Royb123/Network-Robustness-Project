@@ -720,10 +720,10 @@ def create_indexed_img_list_from_dataset(imgs_list):
     return [Image(imgs_list[i], i) for i in range(len(imgs_list))]
 
 
-def rng_search_all_epsilons_sorted_by_score_func(imgs_list, num_imgs, score_func=confidence_score_func):
+def rng_search_all_epsilons_sorted_by_score_func(imgs_list, method, score_func=confidence_score_func):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
     sorted_imgs = sorted(imgs, key=lambda img: score_func(img))
-    epsilons, runs_num = get_all_eps_ignore_method(sorted_imgs)
+    epsilons, runs_num = method(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
 
@@ -740,10 +740,10 @@ def run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs):
         p = Process(target=check_epsilons_diversed_method, args=(size, label, met, s_func))
         p.start()
 
-def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, method, score_func, name_for_log):
+def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, method, score_func, name_for_log):
     user_logger.info("start rng_binary {}".format(name_for_log))
 
-    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons_sorted_by_score_func(imgs_list, size, method=method, score_func=score_func)
+    rng_bin_srch_epsilons, rng_bin_srch_runs_num = rng_search_all_epsilons_sorted_by_score_func(imgs_list, method=method, score_func=score_func)
 
     user_logger.info('rng_binary {} # num of runs: {}'.format(name_for_log, rng_bin_srch_runs_num))
     user_logger.info('rng_binary {} # epsilons: {}'.format(name_for_log, rng_bin_srch_epsilons))
@@ -788,7 +788,7 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
         if score_func_string == "naive_and_sorted_correctly":
 
             sorted_correctly_score_func = get_score_func_sort_correctly(imgs_list, size, eps_file_path)
-            ret += [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, method_func, sorted_correctly_score_func,
+            ret += [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, method_func, sorted_correctly_score_func,
                                                              "{}_sorted_correctly_method_{}".format(basename_for_log, method_string)),]
 
     else:
@@ -800,7 +800,7 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
         else:
             raise Exception("unknown score_func")
 
-        ret = [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, size, method_func, score_func,
+        ret = [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, method_func, score_func,
                                                                 "{}_method_{}_scored_{}".format(basename_for_log,
                                                                 method_string, score_func_string)),]
 

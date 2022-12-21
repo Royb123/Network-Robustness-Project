@@ -824,7 +824,7 @@ def check_epsilons_diversed_method(num_imgs, label, method_str, score_func_strin
     images = load_dataset('mnist') #TODO change using config.netname
     images.create_dict_to_eran()
     dataset = images.dict_to_eran
-    imgs_list = dataset[label][:num_imgs-1]
+    imgs_list = dataset[label][:num_imgs]
     epsilons_list = []
 
     basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label), str(num_imgs))

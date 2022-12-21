@@ -302,9 +302,9 @@ def binary_search(img, lower_bound, upper_bound, is_in_range):
 
     cnt = 2
 
-    point = 10**(-PRECISION)
+    point = 10**(-PRECISION + 1)
     while (upper_bound - lower_bound) > point:
-        mid = round(((lower_bound + upper_bound)/2), PRECISION+1)
+        mid = round(((lower_bound + upper_bound)/2), PRECISION+2)
         if is_in_range([img], mid)[2] == 1:  # if epsilon >= mid
             lower_bound = mid
         else:
@@ -709,7 +709,7 @@ def sort_img_correctly(indexed_imgs_list, num_imgs, eps_file_path):
     user_logger.info("sort_img_correctly: loaded {}".format(eps_arr))
     sorted_by_ind_eps_arr = sorted(eps_arr, key=lambda eps: eps[1])
     user_logger.info("sort_img_correctly: sorted epsilons {}".format(sorted_by_ind_eps_arr))
-    sorted_imgs = sorted(indexed_imgs_list, key=lambda img: sorted_by_ind_eps_arr[img.index][0], reverse=True)
+    sorted_imgs = sorted(indexed_imgs_list, key=lambda img: sorted_by_ind_eps_arr[img.index][0])
     user_logger.info("sort_img_correctly: sorted imgs {}".format([img.index for img in sorted_imgs]))
 
     return sorted_imgs

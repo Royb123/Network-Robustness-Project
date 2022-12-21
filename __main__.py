@@ -389,7 +389,7 @@ def load_cheat_eps_from_txt(file_name, num_of_imgs):
     for position, line in enumerate(eps_file):
         new_eps = float(re.findall('max epsilon (.*?) ,', line)[0])
         eps_array.append(new_eps)
-        if position == num_of_imgs-1:
+        if position == num_of_imgs:
             break
     return eps_array
 
@@ -765,7 +765,7 @@ def check_epsilons_naive_img_one_by_one(imgs_list, size, name_for_log):
 
     eps_file_path = './cheat_sheet_round_{}.csv'.format(name_for_log)
 
-    create_cheat_sheet_csv(imgs_list, range(size-1), run_eran, eps_file_path)
+    create_cheat_sheet_csv(imgs_list, range(size), run_eran, eps_file_path)
     naive_epsilons, naive_runs_num = load_cheat_eps_from_csv(eps_file_path, size)
 
     user_logger.info('Naive {} # num of runs: {}'.format(name_for_log, naive_runs_num))

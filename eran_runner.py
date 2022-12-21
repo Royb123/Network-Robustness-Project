@@ -84,9 +84,6 @@ def show_ascii_spec(lb, ub, n_rows, n_cols, n_channels):
 
 def normalize(image, means, stds, dataset):
     # normalization taken out of the network
-    print("means {}. image {}".format(means, image))
-    print("means_size {}".format(len(means)))
-    print("image_size {}".format(len(image)))
     if len(means) == len(image):
         for i in range(len(image)):
             image[i] -= means[i]

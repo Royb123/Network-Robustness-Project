@@ -539,11 +539,6 @@ def get_all_eps_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=ru
     if imgs:
         mid_indx = round(len(imgs)/2)
         mid_img = imgs[mid_indx]
-        user_logger.info("img {}, lower {}, upper {}, is_in_range {}".format(mid_img, lower, upper, is_in_range.__name__))
-        user_logger.info("types: img {}, lower {}, upper {}, is_in_range {}".format(type(mid_img), type(lower), type(upper), type(is_in_range)))
-        user_logger.info("img.image {}".format(mid_img.image))
-        user_logger.info("types: img.image {}".format(type(mid_img.image)))
-
         mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
 
         if mid_img_eps < MIN_EPS:
@@ -734,11 +729,6 @@ def create_indexed_img_list_from_dataset(imgs_list):
 def rng_search_all_epsilons_sorted_by_score_func(imgs_list, method, score_func=confidence_score_func):
     imgs = create_indexed_img_list_from_dataset(imgs_list)
     sorted_imgs = sorted(imgs, key=lambda img: score_func(img))
-    user_logger.info("imgs_list {}".format(imgs_list))
-    user_logger.info("sorted_imgs {}".format(sorted_imgs))
-    user_logger.info("sorted_imgs[0] {}".format(sorted_imgs[0]))
-    user_logger.info("imgs_list[0] {}".format(imgs_list[0]))
-
     epsilons, runs_num = method(sorted_imgs)
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
@@ -837,9 +827,6 @@ def check_epsilons_diversed_method(num_imgs, label, method_str, score_func_strin
     imgs_list = dataset[label][:num_imgs-1]
     epsilons_list = []
 
-    user_logger.info("base_imgs_list {}".format(imgs_list))
-    user_logger.info("base_imgs_list[0] {}".format(imgs_list[0]))
-
     basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label), str(num_imgs))
 
     epsilons_list += check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method_string=method_str, score_func_string=score_func_string)
@@ -872,7 +859,7 @@ def main():
     """
     parse_args()
 
-    sizes = [14,]
+    sizes = [16,]
     labels = [2,]
     methods = ["ignore", "ignore_mistake_control"]
     score_funcs = ["naive_and_sorted_correctly"]

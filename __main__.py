@@ -204,14 +204,20 @@ class Dataset(object):
         else:
             raise Exception('only {} are supported'.format(dataset_labels_setup.keys()))
 
-    def organize_to_labels(self):
+    def organize_to_labels(self, test_imags=False):
         """
         input is from class dataset, output is a dictionary, keys are according to labels
         """
-        images = self.train_labels
+        labels = self.train_labels
+        images = self.train_images
+
+        if test_imags:
+            labels = self.test_labels
+            images = self.test_images
+
         organized_images = dict.fromkeys(self.labels)
-        for i in range(len(images)):
-            key = self.labels[dataset_labels_setup_func[self.name](images, i)]
+        for i in range(len(labels)):
+            key = self.labels[dataset_labels_setup_func[self.name](labels, i)]
             if organized_images[key] is None:
                 organized_images[key] = [images[i]]
             else:

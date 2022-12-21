@@ -247,7 +247,7 @@ class Image(object):
 
 class Epsilon(float):
     def __eq__(self, other):
-        return abs(self.real - other.real ) < 10 ** PRECISION
+        return abs(self.real - other.real ) < 10 ** (-1 * PRECISION)
 
 
 def plot(image, label, name):  # input- image (without label). no output. plots image
@@ -837,10 +837,10 @@ def check_epsilons_diversed_method(num_imgs, label, method_str, score_func_strin
     if all([i == epsilons_list[0] for i in epsilons_list]):
         user_logger.info("epsilon lists are identical")
     else:
-        user_logger.info("score_func - {}".format(score_func_string))
-        user_logger.info("method - {}".format(method_str))
+        user_logger.error("score_func - {}".format(score_func_string))
+        user_logger.error("method - {}".format(method_str))
         for epsilons in epsilons_list:
-            user_logger.info("epsilons - {}".format(epsilons))
+            user_logger.error("epsilons - {}".format(epsilons))
         user_logger.error('epsilon lists not identical')
 
         raise Exception('epsilon lists not identical')

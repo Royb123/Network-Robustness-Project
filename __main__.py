@@ -864,8 +864,8 @@ def main():
     """
     parse_args()
 
-    sizes = [32,]
-    labels = [2,]
+    sizes = [1024,]
+    labels = [2, 8]
     methods = ["ignore", "ignore_mistake_control"]
     score_funcs = ["naive_and_sorted_correctly", "confidence", "random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)

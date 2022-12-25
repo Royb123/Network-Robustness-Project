@@ -701,7 +701,7 @@ def save_runs_num(runs_num_file, runs_num, options, network, precision=PRECISION
 
     if key in runs_num_dict:
         if runs_num not in runs_num_dict[key]:
-            user_logger.error("new runs_num for same key. save new num {}".format(runs_num))
+            user_logger.warning("new runs_num for same key. save new num {}".format(runs_num))
             runs_num_dict[key].append(runs_num)
     else:
         runs_num_dict[key] = [runs_num]
@@ -864,10 +864,10 @@ def main():
     """
     parse_args()
 
-    sizes = [16,]
+    sizes = [32,]
     labels = [2,]
-    methods = ["ignore",]
-    score_funcs = ["naive_and_sorted_correctly",]
+    methods = ["ignore", "ignore_mistake_control"]
+    score_funcs = ["naive_and_sorted_correctly", "confidence", "random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
 if __name__ == "__main__":

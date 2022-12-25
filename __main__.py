@@ -302,7 +302,7 @@ def binary_search(img, lower_bound, upper_bound, is_in_range):
 
     cnt = 2
 
-    point = 10**(-PRECISION + 1)
+    point = 10**(-(PRECISION + 1))
     while (upper_bound - lower_bound) > point:
         mid = round(((lower_bound + upper_bound)/2), PRECISION+2)
         if is_in_range([img], mid)[2] == 1:  # if epsilon >= mid

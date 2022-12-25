@@ -541,10 +541,15 @@ def get_all_eps_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=ru
         mid_img = imgs[mid_indx]
         mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
 
+        user_logger.info("img_ind - {}. eps found first search - {}".format(mid_img.index, mid_img_eps))
+
         if mid_img_eps < MIN_EPS:
             if not (mid_img_eps == EPS_IS_LOWER and lower == MIN_EPS):
                 # otherwise the image is bad image
                 mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, MAX_EPS, is_in_range)
+
+                user_logger.info("img_ind - {}. eps found second search - {}".format(mid_img.index, mid_img_eps))
+
                 if mid_img_eps != EPS_IS_LOWER:
                     user_logger.debug("ignore bad_image")
                     # otherwise the image is bad image

@@ -738,18 +738,47 @@ def rng_search_all_epsilons_sorted_by_score_func(imgs_list, method, score_func=c
     sorted_epsilons = sorted(epsilons, key=lambda eps: eps[1])
     return sorted_epsilons, runs_num
 
+def check_all_outputs_equal(eps_list):
+    if all([i == eps_list[0] for i in eps_list]):
+        user_logger.info("epsilon lists are identical")
+    else:
+        for epsilons in eps_list:
+            user_logger.error("epsilons - {}".format(epsilons))
+        user_logger.error('epsilon lists not identical')
 
-# def run_and_check_range_sizes_X_labels(labels, sizes):
-#     str_labels = [str(label) for label in labels]
-#     with Pool(10) as p:
-#         p.starmap(run_and_check_one_iteration, product(sizes, str_labels))
+        raise Exception('epsilon lists not identical')
 
 
 def run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs):
+    user_logger.info("######################## start logging ########################")
+
     str_labels = [str(label) for label in labels]
-    for size, label, met, s_func in product(sizes, str_labels, methods, score_funcs):
-        p = Process(target=check_epsilons_diversed_method, args=(size, label, met, s_func))
-        p.start()
+    for size, label in product(sizes, str_labels):
+        user_logger.info("############# start logging size {}, label {} #############".format(size, label))
+
+        imgs_list = load_imgs(label, size)
+        epsilons_list = []
+        basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label),
+                                                                str(size))
+
+        q = Queue(len(methods) * len(score_funcs))
+        processes = [Process(target=check_epsilons_by_method_with_time, args=(imgs_list, size, basename_for_log, met, s_func, q))
+                     for met, s_func in product(methods, score_funcs)]
+
+        for p in processes:
+            p.start()
+
+        for p in processes:
+            p.join()
+
+        while not q.empty():
+            epsilons_list += q.get()
+
+        check_all_outputs_equal(epsilons_list)
+        user_logger.info("############# end logging size {}, label {} #############".format(size, label))
+
+
+    user_logger.info("######################## end of logging ########################")
 
 def check_epsilons_rng_binary_sorted_by_score_func(imgs_list, method, score_func, name_for_log):
     user_logger.info("start rng_binary {}".format(name_for_log))
@@ -822,37 +851,15 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
 
     return ret
 
-def check_epsilons_diversed_method(num_imgs, label, method_str, score_func_string):
-
-    user_logger.info("######################## start logging ########################")
-
+def load_imgs(label, size):
     images = load_dataset('mnist') #TODO change using config.netname
     images.create_dict_to_eran()
     dataset = images.dict_to_eran
-    imgs_list = dataset[label][:num_imgs]
-    epsilons_list = []
-
-    basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label), str(num_imgs))
-
-    epsilons_list += check_epsilons_by_method_with_time(imgs_list, num_imgs, basename_for_log, method_string=method_str, score_func_string=score_func_string)
-    user_logger.info(
-        'Network: {network}, number of images: {img_num}, digit: {digit}, score_func: {s_func}, method: {met}'.format(
-            network=config.netname, img_num=str(num_imgs), digit=str(label), s_func=score_func_string, met=method_str))
-
-    if all([i == epsilons_list[0] for i in epsilons_list]):
-        user_logger.info("epsilon lists are identical")
-    else:
-        user_logger.error("score_func - {}".format(score_func_string))
-        user_logger.error("method - {}".format(method_str))
-        for epsilons in epsilons_list:
-            user_logger.error("epsilons - {}".format(epsilons))
-        user_logger.error('epsilon lists not identical')
-
-        raise Exception('epsilon lists not identical')
+    return dataset[label][:size]
 
 
-
-    user_logger.info("######################## end of logging ########################")
+def check_epsilons_diversed_method(num_imgs, label, method_str, score_func_string):
+    pass
 
 def main():
     """
@@ -864,8 +871,8 @@ def main():
     """
     parse_args()
 
-    sizes = [1024,]
-    labels = [2, 8]
+    sizes = [128,]
+    labels = [2,]
     methods = ["ignore", "ignore_mistake_control"]
     score_funcs = ["naive_and_sorted_correctly", "confidence", "random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)

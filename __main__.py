@@ -761,7 +761,7 @@ def run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs):
         basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label),
                                                                 str(size))
 
-        q = Queue(len(methods) * len(score_funcs))
+        q = Queue(len(methods) * len(score_funcs) * 2)
         processes = [Process(target=check_epsilons_by_method_with_time, args=(imgs_list, size, basename_for_log, met, s_func, q))
                      for met, s_func in product(methods, score_funcs)]
 
@@ -772,7 +772,7 @@ def run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs):
             p.join()
 
         while not q.empty():
-            epsilons_list += q.get()
+            epsilons_list.append(q.get())
 
         check_all_outputs_equal(epsilons_list)
         user_logger.info("############# end logging size {}, label {} #############".format(size, label))
@@ -809,7 +809,7 @@ def check_epsilons_naive_img_one_by_one(imgs_list, size, name_for_log):
 
     return naive_epsilons, eps_file_path
 
-def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method_string="ignore", score_func_string="rng_binary_by_confidence"):
+def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method_string, score_func_string, queue):
     start_time = time.time()
 
     # Check method
@@ -823,13 +823,13 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
     # Check naive score_func
     if "naive" in score_func_string:
         naive_ret, eps_file_path = check_epsilons_naive_img_one_by_one(imgs_list, size, basename_for_log)
-        ret = [naive_ret,]
+        queue.put(naive_ret)
 
         if score_func_string == "naive_and_sorted_correctly":
 
             sorted_correctly_score_func = get_score_func_sort_correctly(imgs_list, size, eps_file_path)
-            ret += [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, method_func, sorted_correctly_score_func,
-                                                             "{}_sorted_correctly_method_{}".format(basename_for_log, method_string)),]
+            queue.put(check_epsilons_rng_binary_sorted_by_score_func(imgs_list, method_func, sorted_correctly_score_func,
+                                                             "{}_sorted_correctly_method_{}".format(basename_for_log, method_string)))
 
     else:
         # Check score_func
@@ -840,16 +840,14 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
         else:
             raise Exception("unknown score_func")
 
-        ret = [check_epsilons_rng_binary_sorted_by_score_func(imgs_list, method_func, score_func,
+        queue.put(check_epsilons_rng_binary_sorted_by_score_func(imgs_list, method_func, score_func,
                                                                 "{}_method_{}_scored_{}".format(basename_for_log,
-                                                                method_string, score_func_string)),]
+                                                                method_string, score_func_string)))
 
     end_time = time.time()
     elapsed_time = (start_time - end_time) / 60  # convert to minutes
 
     user_logger.info('Execution time: {} minutes'. format(elapsed_time))
-
-    return ret
 
 def load_imgs(label, size):
     images = load_dataset('mnist') #TODO change using config.netname

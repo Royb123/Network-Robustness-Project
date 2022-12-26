@@ -857,10 +857,6 @@ def load_imgs(label, size):
     dataset = images.dict_to_eran
     return dataset[label][:size]
 
-
-def check_epsilons_diversed_method(num_imgs, label, method_str, score_func_string):
-    pass
-
 def main():
     """
     confidence_array -> array of scores per class for the images

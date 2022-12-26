@@ -865,11 +865,13 @@ def main():
     """
     parse_args()
 
-    sizes = [128,]
-    labels = [2,]
+    sizes = [128, 1024]
+    labels = [2, 5, 8]
     methods = ["ignore", "ignore_mistake_control"]
     score_funcs = ["naive_and_sorted_correctly", "confidence", "random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+
+
 
 if __name__ == "__main__":
     try:

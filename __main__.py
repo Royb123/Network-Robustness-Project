@@ -867,7 +867,7 @@ def main():
 
     sizes = [128,]
     labels = [2,]
-    methods = ["ignore",]
+    methods = ["ignore", "ignore_mistake_control"]
     score_funcs = ["naive_and_sorted_correctly", "confidence", "random"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 

@@ -865,7 +865,7 @@ def main():
     """
     parse_args()
 
-    sizes = [128, 1024]
+    sizes = [100, 1000]
     labels = [2, 5, 8]
     methods = ["ignore", "ignore_mistake_control"]
     score_funcs = ["naive_and_sorted_correctly", "confidence", "random"]

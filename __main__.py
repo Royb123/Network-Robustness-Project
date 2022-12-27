@@ -247,7 +247,7 @@ class Image(object):
 
 class Epsilon(float):
     def __eq__(self, other):
-        return abs(self.real - other.real ) < 10 ** (-1 * PRECISION)
+        return abs(self.real - other.real ) <= 10 ** (-1 * PRECISION)
 
 
 def plot(image, label, name):  # input- image (without label). no output. plots image

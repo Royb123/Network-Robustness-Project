@@ -551,7 +551,7 @@ def get_all_eps_ignore_method(imgs, lower=MIN_EPS, upper=MAX_EPS, is_in_range=ru
                 user_logger.info("img_ind - {}. eps found second search - {}".format(mid_img.index, mid_img_eps))
 
                 if mid_img_eps != EPS_IS_LOWER:
-                    user_logger.debug("ignore bad_image")
+                    user_logger.info("ignore - the order is wrong. add second running")
                     # otherwise the image is bad image
                     num_of_runs += num_of_runs_after_mistake
 
@@ -592,24 +592,23 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
         mid_img = imgs[mid_indx]
         mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
 
-        if mid_img_eps > MIN_EPS:
+        if mid_img_eps >= MIN_EPS:
             # Epsilon in bounderies
             lower_list = imgs[:mid_indx]
             lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list, lower,
-                                                                                        mid_img_eps, before_lower,
-                                                                                        upper, is_in_range)
+                                            mid_img_eps, before_lower, upper, is_in_range)
 
             upper_list = imgs[mid_indx + 1:]
             upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, mid_img_eps,
-                                                                                        upper, lower, before_upper,
-                                                                                        is_in_range)
+                                            upper, lower, before_upper, is_in_range)
 
         else:
+
             # check which boundary is wrong
             if mid_img_eps == EPS_IS_LOWER:
                 if lower == MIN_EPS:
                     # image is bad image, ignore and restart
-                    user_logger.debug("ignore mistakes_control bad_image")
+                    user_logger.info("ignore mistakes_control - bad_image")
                     imgs.pop(mid_indx)
                     reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
                                                              lower, upper, before_lower, before_upper, is_in_range)
@@ -621,13 +620,14 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
 
                 if mid_img_eps == EPS_IS_LOWER:
                     # image is bad image, ignore and restart
-                    user_logger.debug("ignore mistakes_control bad_image")
+                    user_logger.info("ignore mistakes_control - bad_image")
                     imgs.pop(mid_indx)
                     reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
                                                             lower, upper, before_lower, before_upper, is_in_range)
                     return reduced_eps_list[:mid_indx] + [(Epsilon(EPS_IS_LOWER), int(mid_img.index))] + reduced_eps_list[
                                                                        mid_indx:], num_of_runs + reduced_eps_runs
 
+                user_logger.info("ignore mistakes_control - the order is wrong. add second running")
                 num_of_runs += num_of_runs_after_mistake
 
                 if mid_img_eps < before_lower:
@@ -865,12 +865,18 @@ def main():
     """
     parse_args()
 
-    sizes = [100, 1000]
-    labels = [2, 5, 8]
-    methods = ["ignore", "ignore_mistake_control"]
-    score_funcs = ["naive_and_sorted_correctly", "confidence", "random"]
+    sizes = [105]
+    labels = [3]
+    methods = ["ignore",]
+    score_funcs = ["naive_and_sorted_correctly",]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
+
+    sizes = [105]
+    labels = [3]
+    methods = ["ignore_mistake_control",]
+    score_funcs = ["naive_and_sorted_correctly",]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
 
 if __name__ == "__main__":

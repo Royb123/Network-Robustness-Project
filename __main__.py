@@ -46,6 +46,7 @@ MIN_EPS = 0
 
 VERSION = "3.0"
 PRECISION = 4
+
 USE_SUBPROCESS_AND_WAIT = True
 TEST = False
 LOGGER_PATH = r"/root/logging/user_logger"
@@ -118,7 +119,7 @@ def parse_args():
 
     # Logging options
     parser.add_argument('--logdir', type=str, default=None, help='Location to save logs to. If not specified, logs are not saved and emitted to stdout')
-    parser.add_argument('--logname', type=str, default=None, help='Directory of log files in `logdir`, if not specified timestamp is used')
+    parser.add_argument('--logn ame', type=str, default=None, help='Directory of log files in `logdir`, if not specified timestamp is used')
 
 
     args = parser.parse_args()
@@ -247,7 +248,8 @@ class Image(object):
 
 class Epsilon(float):
     def __eq__(self, other):
-        return abs(self.real - other.real ) <= 10 ** (-1 * PRECISION)
+        # because of the problem of floating point in python
+        return abs(self.real - other.real ) <= (10 ** (-1 * PRECISION) + 10 ** (-1 * (PRECISION + 1)))
 
 
 def plot(image, label, name):  # input- image (without label). no output. plots image
@@ -289,6 +291,9 @@ def load_dataset(dataset_name, debug=False):
 
 def binary_search(img, lower_bound, upper_bound, is_in_range):
     user_logger.info(" low {}. up {}.".format(lower_bound, upper_bound))
+
+    lower_bound = max(lower_bound - (10 ** (-1 * PRECISION)) / 2, MIN_EPS)
+    upper_bound = min(upper_bound + (10 ** (-1 * PRECISION)) / 2, MAX_EPS)
 
     if is_in_range([img], lower_bound)[2] == 0:
         user_logger.info("epsilon is out of range, too small")
@@ -667,7 +672,7 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
 
                 upper_list = imgs[mid_indx + 1:]
                 upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list,
-                                                lower, before_upper, before_lower, MAX_EPS, is_in_range)
+                                                   lower, before_upper, before_lower, MAX_EPS, is_in_range)
 
             else:
                 raise Exception("false return value of binary_search")
@@ -865,14 +870,14 @@ def main():
     """
     parse_args()
 
-    sizes = [105]
+    sizes = [95]
     labels = [3]
     methods = ["ignore",]
     score_funcs = ["naive_and_sorted_correctly",]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
 
-    sizes = [105]
+    sizes = [95]
     labels = [3]
     methods = ["ignore_mistake_control",]
     score_funcs = ["naive_and_sorted_correctly",]

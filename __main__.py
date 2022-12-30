@@ -870,19 +870,11 @@ def main():
     """
     parse_args()
 
-    sizes = [95]
-    labels = [3]
-    methods = ["ignore",]
-    score_funcs = ["naive_and_sorted_correctly",]
+    sizes = [1024, 2048, 128]
+    labels = [3, 6, 9]
+    methods = ["ignore","ignore_mistake_control"]
+    score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
-
-
-    sizes = [95]
-    labels = [3]
-    methods = ["ignore_mistake_control",]
-    score_funcs = ["naive_and_sorted_correctly",]
-    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
-
 
 if __name__ == "__main__":
     try:

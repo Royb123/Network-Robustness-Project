@@ -852,7 +852,8 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
     end_time = time.time()
     elapsed_time = (start_time - end_time) / 60  # convert to minutes
 
-    user_logger.info('Execution time: {} minutes'. format(elapsed_time))
+    user_logger.info('Finish iteration. Execution time: {} minutes'. format(elapsed_time))
+    exit(0)
 
 def load_imgs(label, size):
     images = load_dataset('mnist') #TODO change using config.netname
@@ -870,14 +871,20 @@ def main():
     """
     parse_args()
 
-    sizes = [1024,]
-    labels = [0, 1, 2, 4, 5, 7, 8,]
-    methods = ["ignore_mistake_control",]
-    score_funcs = ["naive", "random", "confidence"]
-    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+    # sizes = [1024,]
+    # labels = [0, 1, 2, 4, 5, 7, 8,]
+    # methods = ["ignore_mistake_control",]
+    # score_funcs = ["naive", "random", "confidence"]
+    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+    #
+    #
+    # sizes = [16 * 2 ** i for i in range(6)]
+    # labels = [3, 6]
+    # methods = ["ignore_mistake_control",]
+    # score_funcs = ["naive", "confidence"]
+    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
-
-    sizes = [16 * 2 ** i for i in range(6)]
+    sizes = [12,13,14]
     labels = [3, 6]
     methods = ["ignore_mistake_control",]
     score_funcs = ["naive", "confidence"]

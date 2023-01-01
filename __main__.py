@@ -44,7 +44,7 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-VERSION = "quit_proc"
+VERSION = "3.1"
 PRECISION = 4
 
 USE_SUBPROCESS_AND_WAIT = True
@@ -871,20 +871,14 @@ def main():
     """
     parse_args()
 
-    # sizes = [1024,]
-    # labels = [0, 1, 2, 4, 5, 7, 8,]
-    # methods = ["ignore_mistake_control",]
-    # score_funcs = ["naive", "random", "confidence"]
-    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
-    #
-    #
-    # sizes = [16 * 2 ** i for i in range(6)]
-    # labels = [3, 6]
-    # methods = ["ignore_mistake_control",]
-    # score_funcs = ["naive", "confidence"]
-    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+    sizes = [1024,]
+    labels = [1, 2, 4, 5, 7, 8,]
+    methods = ["ignore_mistake_control",]
+    score_funcs = ["naive", "random", "confidence"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
-    sizes = [12,13,14]
+
+    sizes = [16 * 2 ** i for i in range(6)]
     labels = [3, 6]
     methods = ["ignore_mistake_control",]
     score_funcs = ["naive", "confidence"]

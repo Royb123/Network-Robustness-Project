@@ -766,18 +766,18 @@ def run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs):
         basename_for_log = "netname_{}_label_{}_size_{}".format(os.path.basename(config.netname), str(label),
                                                                 str(size))
 
-        q = Queue(len(methods) * len(score_funcs) * 2)
+        queue_size = (len(methods) + len([m for m in methods if m == "naive_and_sorted_correctly"])) * len(score_funcs)
+        q = Queue(queue_size)
         processes = [Process(target=check_epsilons_by_method_with_time, args=(imgs_list, size, basename_for_log, met, s_func, q))
                      for met, s_func in product(methods, score_funcs)]
 
         for p in processes:
             p.start()
 
+        epsilons_list = [q.get() for _ in range(queue_size)]
+
         for p in processes:
             p.join()
-
-        while not q.empty():
-            epsilons_list.append(q.get())
 
         check_all_outputs_equal(epsilons_list)
         user_logger.info("############# end logging size {}, label {} #############".format(size, label))
@@ -850,7 +850,7 @@ def check_epsilons_by_method_with_time(imgs_list, size, basename_for_log, method
                                                                 method_string, score_func_string)))
 
     end_time = time.time()
-    elapsed_time = (start_time - end_time) / 60  # convert to minutes
+    elapsed_time = (end_time - start_time) / 60  # convert to minutes
 
     user_logger.info('Finish iteration. Execution time: {} minutes'. format(elapsed_time))
     exit(0)

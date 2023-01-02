@@ -146,6 +146,7 @@ def main_run_eran_wrapper(img_input, input_epsilon, queue=None):
     ret = main_run_eran(img_input, input_epsilon)
     if queue:
         queue.put(ret)
+        exit(0)
 
     return ret
 

@@ -873,15 +873,15 @@ def main():
     parse_args()
 
     sizes = [1024, ]
-    labels = [9, ]
-    methods = ["ignore_mistake_control", "ignore"]
-    score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
+    labels = [2, 4, 5, 7, 8,]
+    methods = ["ignore_mistake_control"]
+    score_funcs = ["naive", "random", "confidence"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
-    sizes = [2048, 128]
-    labels = [3, 6, 9]
-    methods = ["ignore_mistake_control", "ignore"]
-    score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
+    sizes = [16 * 2 ** i for i in range(6)]
+    labels = [3, 6]
+    methods = ["ignore_mistake_control"]
+    score_funcs = ["naive", "confidence"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
 

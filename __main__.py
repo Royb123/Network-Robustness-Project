@@ -872,17 +872,25 @@ def main():
     """
     parse_args()
 
-    sizes = [2048, 128]
-    labels = [6, 9]
+    # new run in dana 1 withe different network
+
+    sizes = [1024, ]
+    labels = [7]
     methods = ["ignore_mistake_control", "ignore"]
     score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
-    sizes = [128]
-    labels = [3]
-    methods = ["ignore_mistake_control", "ignore"]
-    score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
-    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+    # sizes = [2048, 128]
+    # labels = [6, 9]
+    # methods = ["ignore_mistake_control", "ignore"]
+    # score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
+    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+    #
+    # sizes = [128]
+    # labels = [3]
+    # methods = ["ignore_mistake_control", "ignore"]
+    # score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
+    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
     # dana 1
     # sizes = [1024, ]

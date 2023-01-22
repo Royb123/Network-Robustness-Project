@@ -872,9 +872,9 @@ def main():
     """
     parse_args()
 
-    #new run in dana 1 withe different network
+    #new run with different network
     sizes = [1024, ]
-    labels = [2,4]
+    labels = [2,4,7]
     methods = ["ignore_mistake_control", "ignore"]
     score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)

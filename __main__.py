@@ -926,7 +926,7 @@ def main():
     # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
     #
     sizes = [1024]
-    labels = [3]
+    labels = [5]
     methods = ["ignore_mistake_control"]
     score_funcs = ["confidence"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)

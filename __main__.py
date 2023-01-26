@@ -44,7 +44,7 @@ IMG_UNRECOGNIZABLE = -4
 MAX_EPS = 0.05
 MIN_EPS = 0
 
-VERSION = "3.1"
+VERSION = "3.2"
 PRECISION = 4
 
 USE_SUBPROCESS_AND_WAIT = True
@@ -288,6 +288,45 @@ def load_dataset(dataset_name, debug=False):
         plot(images_dataset.test_images[2], images_dataset.test_labels[2], images_dataset.name)
 
     return images_dataset
+
+
+def binary_search_one_check_to_verify(img, lower_bound, upper_bound, is_in_range):
+    user_logger.info(" low {}. up {}.".format(lower_bound, upper_bound))
+
+    lower_bound = max(lower_bound - (10 ** (-1 * PRECISION)) / 2, MIN_EPS)
+    upper_bound = min(upper_bound + (10 ** (-1 * PRECISION)) / 2, MAX_EPS)
+
+    # check if epsilon in range
+    mid = round(((lower_bound + upper_bound) / 2), PRECISION + 2)
+    if is_in_range([img], mid)[2] == 1:  # if epsilon >= mid
+        if is_in_range([img], upper_bound)[2] == 1:  # epsilon > upper -> out of range
+            user_logger.info('epsilon is out of range, too high')
+            user_logger.info(" runs {}.".format(2))
+            return EPS_IS_HIGHER, 2
+        else:  # mid < epsilon < upper
+            lower_bound = mid
+
+    else:  # if epsilon <= mid
+        if is_in_range([img], lower_bound)[2] == 0:  # epsilon < lower -> out of range
+            user_logger.info("epsilon is out of range, too small")
+            user_logger.info(" runs {}.".format(2))
+            return EPS_IS_LOWER, 2
+        else:  # lower < epsilon < mid
+            upper_bound = mid
+
+    cnt = 2
+    point = 10**(-(PRECISION + 1))
+
+    while (upper_bound - lower_bound) > point:
+        mid = round(((lower_bound + upper_bound)/2), PRECISION+2)
+        if is_in_range([img], mid)[2] == 1:  # if epsilon >= mid
+            lower_bound = mid
+        else:
+            upper_bound = mid
+        cnt += 1
+
+    user_logger.info("eps {}. runs {}.".format(lower_bound, cnt))
+    return round(lower_bound, PRECISION), cnt
 
 
 def binary_search(img, lower_bound, upper_bound, is_in_range):
@@ -596,7 +635,7 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
     else:
         mid_indx = round(len(imgs)/2)
         mid_img = imgs[mid_indx]
-        mid_img_eps, num_of_runs = binary_search(mid_img.image, lower, upper, is_in_range)
+        mid_img_eps, num_of_runs = binary_search_one_check_to_verify(mid_img.image, lower, upper, is_in_range)
 
         if mid_img_eps >= MIN_EPS:
             # Epsilon in bounderies
@@ -621,7 +660,7 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
                     return reduced_eps_list[:mid_indx] + [(Epsilon(EPS_IS_LOWER), int(mid_img.index))] + reduced_eps_list[
                                                                         mid_indx:], num_of_runs + reduced_eps_runs
 
-                mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, MIN_EPS, upper, is_in_range)
+                mid_img_eps, num_of_runs_after_mistake = binary_search_one_check_to_verify(mid_img.image, MIN_EPS, upper, is_in_range)
                 check_bad_image(mid_img_eps)
 
                 if mid_img_eps == EPS_IS_LOWER:
@@ -654,7 +693,7 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
                                                 upper, before_lower, before_upper, is_in_range)
 
             elif mid_img_eps == EPS_IS_HIGHER:
-                mid_img_eps, num_of_runs_after_mistake = binary_search(mid_img.image, lower, MAX_EPS, is_in_range)
+                mid_img_eps, num_of_runs_after_mistake = binary_search_one_check_to_verify(mid_img.image, lower, MAX_EPS, is_in_range)
                 check_bad_image(mid_img_eps)
 
                 num_of_runs += num_of_runs_after_mistake

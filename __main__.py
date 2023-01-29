@@ -291,7 +291,7 @@ def load_dataset(dataset_name, debug=False):
 
 
 def binary_search_one_check_to_verify(img, lower_bound, upper_bound, is_in_range):
-    user_logger.info(" low {}. up {}.".format(lower_bound, upper_bound))
+    user_logger.info("binary search one check to verify low {}. up {}.".format(lower_bound, upper_bound))
 
     lower_bound = max(lower_bound - (10 ** (-1 * PRECISION)) / 2, MIN_EPS)
     upper_bound = min(upper_bound + (10 ** (-1 * PRECISION)) / 2, MAX_EPS)
@@ -303,16 +303,21 @@ def binary_search_one_check_to_verify(img, lower_bound, upper_bound, is_in_range
             user_logger.info('epsilon is out of range, too high')
             user_logger.info(" runs {}.".format(2))
             return EPS_IS_HIGHER, 2
-        else:  # mid < epsilon < upper
-            lower_bound = mid
+
+        # mid < epsilon < upper
+        lower_bound = mid
 
     else:  # if epsilon <= mid
         if is_in_range([img], lower_bound)[2] == 0:  # epsilon < lower -> out of range
             user_logger.info("epsilon is out of range, too small")
             user_logger.info(" runs {}.".format(2))
+            if lower_bound == MIN_EPS:
+                # TODO write comment
+                return EPS_IS_LOWER, 1
             return EPS_IS_LOWER, 2
-        else:  # lower < epsilon < mid
-            upper_bound = mid
+
+        # lower < epsilon < mid
+        upper_bound = mid
 
     cnt = 2
     point = 10**(-(PRECISION + 1))
@@ -330,22 +335,25 @@ def binary_search_one_check_to_verify(img, lower_bound, upper_bound, is_in_range
 
 
 def binary_search(img, lower_bound, upper_bound, is_in_range):
-    user_logger.info(" low {}. up {}.".format(lower_bound, upper_bound))
+    user_logger.info("binary search low {}. up {}.".format(lower_bound, upper_bound))
+    assert (lower_bound == MIN_EPS)
 
     lower_bound = max(lower_bound - (10 ** (-1 * PRECISION)) / 2, MIN_EPS)
     upper_bound = min(upper_bound + (10 ** (-1 * PRECISION)) / 2, MAX_EPS)
 
     if is_in_range([img], lower_bound)[2] == 0:
         user_logger.info("epsilon is out of range, too small")
-        user_logger.info(" runs {}.".format( 2))
-        return EPS_IS_LOWER, 2
+        user_logger.info(" runs {}.".format(2))
+        # TODO - write comment
+        return EPS_IS_LOWER, 1
 
     if is_in_range([img], upper_bound)[2] == 1:
         user_logger.info('epsilon is out of range, too high')
         user_logger.info(" runs {}.".format(2))
-        return EPS_IS_HIGHER, 2
+        # TODO - write comment
+        return EPS_IS_HIGHER, 1
 
-    cnt = 2
+    cnt = 1
 
     point = 10**(-(PRECISION + 1))
     while (upper_bound - lower_bound) > point:
@@ -628,98 +636,96 @@ def get_all_eps_with_mistakes_control_ignore_method(imgs, lower=MIN_EPS, upper=M
                                                     before_upper=MAX_EPS, is_in_range=run_eran):
     user_logger.info("rng binary_search_mistakes_control_ignore: ")
 
-
     if not imgs:
         return [], 0
 
-    else:
-        mid_indx = round(len(imgs)/2)
-        mid_img = imgs[mid_indx]
-        mid_img_eps, num_of_runs = binary_search_one_check_to_verify(mid_img.image, lower, upper, is_in_range)
+    mid_indx = round(len(imgs)/2)
+    mid_img = imgs[mid_indx]
+    mid_img_eps, num_of_runs = binary_search_one_check_to_verify(mid_img.image, lower, upper, is_in_range)
 
-        if mid_img_eps >= MIN_EPS:
-            # Epsilon in bounderies
+    if mid_img_eps >= MIN_EPS:
+        # Epsilon in bounderies
+        lower_list = imgs[:mid_indx]
+        lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list, lower,
+                                        mid_img_eps, before_lower, upper, is_in_range)
+
+        upper_list = imgs[mid_indx + 1:]
+        upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, mid_img_eps,
+                                        upper, lower, before_upper, is_in_range)
+
+    else:
+
+        # check which boundary is wrong
+        if mid_img_eps == EPS_IS_LOWER:
+            if lower == MIN_EPS:
+                # image is bad image, ignore and restart
+                user_logger.info("ignore mistakes_control - bad_image")
+                imgs.pop(mid_indx)
+                reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
+                                                         lower, upper, before_lower, before_upper, is_in_range)
+                return reduced_eps_list[:mid_indx] + [(Epsilon(EPS_IS_LOWER), int(mid_img.index))] + reduced_eps_list[
+                                                                    mid_indx:], num_of_runs + reduced_eps_runs
+
+            mid_img_eps, num_of_runs_after_mistake = binary_search_one_check_to_verify(mid_img.image, MIN_EPS, upper, is_in_range)
+            check_bad_image(mid_img_eps)
+
+            if mid_img_eps == EPS_IS_LOWER:
+                # image is bad image, ignore and restart
+                user_logger.info("ignore mistakes_control - bad_image")
+                imgs.pop(mid_indx)
+                reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
+                                                        lower, upper, before_lower, before_upper, is_in_range)
+                return reduced_eps_list[:mid_indx] + [(Epsilon(EPS_IS_LOWER), int(mid_img.index))] + reduced_eps_list[
+                                                                   mid_indx:], num_of_runs + reduced_eps_runs
+
+            user_logger.info("ignore mistakes_control - the order is wrong. add second running")
+            num_of_runs += num_of_runs_after_mistake
+
+            if mid_img_eps < before_lower:
+                # img order is wrong, ignore and restart
+                imgs.pop(mid_indx)
+                reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
+                                                         lower, upper, before_lower, before_upper, is_in_range)
+                return reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[
+                                                                    mid_indx:], num_of_runs + reduced_eps_runs
+
+            # lower or img_eps is wrong
             lower_list = imgs[:mid_indx]
-            lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list, lower,
-                                            mid_img_eps, before_lower, upper, is_in_range)
+            lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list, before_lower,
+                                            upper, MIN_EPS, before_upper, is_in_range)
 
             upper_list = imgs[mid_indx + 1:]
             upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, mid_img_eps,
-                                            upper, lower, before_upper, is_in_range)
+                                            upper, before_lower, before_upper, is_in_range)
+
+        elif mid_img_eps == EPS_IS_HIGHER:
+            mid_img_eps, num_of_runs_after_mistake = binary_search_one_check_to_verify(mid_img.image, lower, MAX_EPS, is_in_range)
+            check_bad_image(mid_img_eps)
+
+            num_of_runs += num_of_runs_after_mistake
+
+            if mid_img_eps > before_upper:
+                # img order is wrong, ignore and restart
+                imgs.pop(mid_indx)
+                reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
+                                                         lower, upper, before_lower, before_upper, is_in_range)
+                return reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:], num_of_runs + reduced_eps_runs
+
+            # upper or img_eps is wrong
+            lower_list = imgs[:mid_indx]
+            lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list,
+                                            lower, mid_img_eps, before_lower, before_upper, is_in_range)
+
+            upper_list = imgs[mid_indx + 1:]
+            upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list,
+                                               lower, before_upper, before_lower, MAX_EPS, is_in_range)
 
         else:
+            raise Exception("false return value of binary_search")
 
-            # check which boundary is wrong
-            if mid_img_eps == EPS_IS_LOWER:
-                if lower == MIN_EPS:
-                    # image is bad image, ignore and restart
-                    user_logger.info("ignore mistakes_control - bad_image")
-                    imgs.pop(mid_indx)
-                    reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
-                                                             lower, upper, before_lower, before_upper, is_in_range)
-                    return reduced_eps_list[:mid_indx] + [(Epsilon(EPS_IS_LOWER), int(mid_img.index))] + reduced_eps_list[
-                                                                        mid_indx:], num_of_runs + reduced_eps_runs
-
-                mid_img_eps, num_of_runs_after_mistake = binary_search_one_check_to_verify(mid_img.image, MIN_EPS, upper, is_in_range)
-                check_bad_image(mid_img_eps)
-
-                if mid_img_eps == EPS_IS_LOWER:
-                    # image is bad image, ignore and restart
-                    user_logger.info("ignore mistakes_control - bad_image")
-                    imgs.pop(mid_indx)
-                    reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
-                                                            lower, upper, before_lower, before_upper, is_in_range)
-                    return reduced_eps_list[:mid_indx] + [(Epsilon(EPS_IS_LOWER), int(mid_img.index))] + reduced_eps_list[
-                                                                       mid_indx:], num_of_runs + reduced_eps_runs
-
-                user_logger.info("ignore mistakes_control - the order is wrong. add second running")
-                num_of_runs += num_of_runs_after_mistake
-
-                if mid_img_eps < before_lower:
-                    # img order is wrong, ignore and restart
-                    imgs.pop(mid_indx)
-                    reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
-                                                             lower, upper, before_lower, before_upper, is_in_range)
-                    return reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[
-                                                                        mid_indx:], num_of_runs + reduced_eps_runs
-
-                # lower or img_eps is wrong
-                lower_list = imgs[:mid_indx]
-                lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list, before_lower,
-                                                upper, MIN_EPS, before_upper, is_in_range)
-
-                upper_list = imgs[mid_indx + 1:]
-                upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list, mid_img_eps,
-                                                upper, before_lower, before_upper, is_in_range)
-
-            elif mid_img_eps == EPS_IS_HIGHER:
-                mid_img_eps, num_of_runs_after_mistake = binary_search_one_check_to_verify(mid_img.image, lower, MAX_EPS, is_in_range)
-                check_bad_image(mid_img_eps)
-
-                num_of_runs += num_of_runs_after_mistake
-
-                if mid_img_eps > before_upper:
-                    # img order is wrong, ignore and restart
-                    imgs.pop(mid_indx)
-                    reduced_eps_list, reduced_eps_runs = get_all_eps_with_mistakes_control_ignore_method(imgs,
-                                                             lower, upper, before_lower, before_upper, is_in_range)
-                    return reduced_eps_list[:mid_indx] + [(Epsilon(mid_img_eps), int(mid_img.index))] + reduced_eps_list[mid_indx:], num_of_runs + reduced_eps_runs
-
-                # upper or img_eps is wrong
-                lower_list = imgs[:mid_indx]
-                lower_eps, lower_eps_runs = get_all_eps_with_mistakes_control_ignore_method(lower_list,
-                                                lower, mid_img_eps, before_lower, before_upper, is_in_range)
-
-                upper_list = imgs[mid_indx + 1:]
-                upper_eps, upper_eps_runs = get_all_eps_with_mistakes_control_ignore_method(upper_list,
-                                                   lower, before_upper, before_lower, MAX_EPS, is_in_range)
-
-            else:
-                raise Exception("false return value of binary_search")
-
-        epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
-        total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
-        return epsilon_list, total_runs
+    epsilon_list = lower_eps + [(Epsilon(mid_img_eps), int(mid_img.index))] + upper_eps
+    total_runs = num_of_runs + lower_eps_runs + upper_eps_runs
+    return epsilon_list, total_runs
 
 
 def save_epsilons_to_csv(eps_list, num_of_iter, path):
@@ -925,11 +931,11 @@ def main():
     # score_funcs = ["naive", "confidence"]
     # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
     #
-    sizes = [1024]
-    labels = [5]
-    methods = ["ignore_mistake_control"]
-    score_funcs = ["confidence"]
-    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+    # sizes = [1024]
+    # labels = [5]
+    # methods = ["ignore_mistake_control"]
+    # score_funcs = ["confidence"]
+    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
     #
     # sizes = [128]
@@ -939,12 +945,20 @@ def main():
     # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
     # dana 1
-    # sizes = [1024, ]
-    # labels = [2, 4, 5, 7, 8,]
-    # methods = ["ignore_mistake_control"]
-    # score_funcs = ["naive", "random", "confidence"]
-    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
-    #
+
+    sizes = [1024, ]
+    labels = [1, 2, 4, 7, 8]
+    methods = ["ignore_mistake_control"]
+    score_funcs = ["random", "confidence"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+
+    sizes = [1024, ]
+    labels = [3, 6, 9]
+    methods = ["ignore_mistake_control", "ignore"]
+    score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+
+    #dana 2
     # sizes = [16 * 2 ** i for i in range(6)]
     # labels = [3, 6]
     # methods = ["ignore_mistake_control"]

@@ -946,14 +946,14 @@ def main():
 
     # dana 1
 
-    # sizes = [1024, ]
-    # labels = [1, 2, 4, 7, 8]
-    # methods = ["ignore_mistake_control"]
-    # score_funcs = ["random", "confidence"]
-    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
-    #
     sizes = [1024, ]
-    labels = [6, 9]
+    labels = [0]
+    methods = ["ignore_mistake_control"]
+    score_funcs = ["random", "confidence"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+
+    sizes = [1024, ]
+    labels = [9]
     methods = ["ignore_mistake_control", "ignore"]
     score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)

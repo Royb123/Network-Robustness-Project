@@ -921,7 +921,7 @@ def main():
     sizes = [1024, ]
     labels = [2,4,7]
     methods = ["ignore_mistake_control", "ignore"]
-    score_funcs = ["naive_and_sorted_correctly", "random", "confidence"]
+    score_funcs = ["random", "confidence"]
     run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
     #new run in dana 2 check tendency with bigger size

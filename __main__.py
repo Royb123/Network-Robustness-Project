@@ -964,11 +964,11 @@ def main():
     parse_args()
 
     #new run with different network
-    sizes = [4, ]
-    labels = [4, ]
-    methods = ["ignore", "restart"]
-    score_funcs = ["confidence"]
-    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+    # sizes = [1024, ]
+    # labels = [2,4,7]
+    # methods = ["ignore", "restart"]
+    # score_funcs = ["confidence"]
+    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
     #new run in dana 2 check tendency with bigger size
     # sizes = [2048, 4096]
@@ -977,11 +977,11 @@ def main():
     # score_funcs = ["naive", "confidence"]
     # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
     #
-    # sizes = [1024]
-    # labels = [5]
-    # methods = ["ignore_mistake_control"]
-    # score_funcs = ["confidence"]
-    # run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
+    sizes = [1024]
+    labels = [2,4,7]
+    methods = ["ignore_mistake_control"]
+    score_funcs = ["naive","confidence"]
+    run_and_check_range_sizes_X_labels(sizes, labels, methods, score_funcs)
 
     #
     # sizes = [128]
